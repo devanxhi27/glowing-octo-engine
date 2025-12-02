@@ -1,0 +1,394 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Health Data View Switcher</title>
+    <!-- Load Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Load Chart.js for visualization -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+    <!-- Load Moment.js for easier date handling (used by Chart.js adapters) -->
+    <script src="https://cdn.jsdelivr.net/npm/moment@2.29.4/moment.min.js"></script>
+    <!-- Load Firebase/Firestore Modules -->
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
+        import { getAuth, signInAnonymously, signInWithCustomToken } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+        import { getFirestore, setLogLevel } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+
+        // Global variables provided by the environment
+        const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
+        const firebaseConfig = typeof __firebase_config !== 'undefined' ? JSON.parse(__firebase_config) : null;
+        const initialAuthToken = typeof __initial_auth_token !== 'undefined' ? __initial_auth_token : null;
+
+        let app, db, auth;
+
+        // Initialize Firebase and Authenticate
+        async function initFirebase() {
+            if (!firebaseConfig) {
+                console.warn("Firebase config not found. Running in mock data mode.");
+                return;
+            }
+            try {
+                // Set Firestore log level for debugging
+                setLogLevel('error');
+                app = initializeApp(firebaseConfig);
+                db = getFirestore(app);
+                auth = getAuth(app);
+
+                // Authenticate the user
+                if (initialAuthToken) {
+                    await signInWithCustomToken(auth, initialAuthToken);
+                    console.log(`Signed in with custom token. User ID: ${auth.currentUser.uid}`);
+                } else {
+                    await signInAnonymously(auth);
+                    console.log(`Signed in anonymously. User ID: ${auth.currentUser.uid}`);
+                }
+            } catch (error) {
+                console.error("Firebase initialization or sign-in failed:", error);
+            }
+        }
+
+        // Expose init function to the global scope for use in the script below
+        window.initFirebase = initFirebase;
+    </script>
+    <style>
+        /* Custom styles for better visual appeal */
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #f3f4f6;
+        }
+    </style>
+</head>
+<body class="p-4 md:p-8 bg-gray-50 min-h-screen">
+
+    <div id="loading-overlay" class="fixed inset-0 bg-white bg-opacity-70 flex items-center justify-center z-50 transition-opacity duration-300">
+        <div class="animate-spin rounded-full h-12 w-12 border-b-2 border-indigo-600"></div>
+        <p class="ml-3 text-indigo-600 font-medium">Loading data...</p>
+    </div>
+
+    <div class="max-w-4xl mx-auto">
+        <header class="mb-6">
+            <h1 class="text-3xl font-extrabold text-gray-900 mb-2">Activity Tracker</h1>
+            <p class="text-gray-600">Visualize your mock step data across different time scales.</p>
+        </header>
+
+        <!-- View Selector Buttons -->
+        <div id="view-selector" class="flex justify-center p-1 mb-6 bg-white rounded-xl shadow-lg border border-gray-200 space-x-1">
+            <button data-view="year" class="view-btn px-4 py-2 text-sm font-semibold rounded-lg transition-colors duration-200">Year</button>
+            <button data-view="month" class="view-btn px-4 py-2 text-sm font-semibold rounded-lg transition-colors duration-200">Month</button>
+            <button data-view="week" class="view-btn px-4 py-2 text-sm font-semibold rounded-lg transition-colors duration-200">Week</button>
+            <button data-view="day" class="view-btn px-4 py-2 text-sm font-semibold rounded-lg transition-colors duration-200">Day</button>
+        </div>
+
+        <!-- Chart Container -->
+        <div class="bg-white p-6 rounded-xl shadow-xl border border-gray-100">
+            <h2 id="chart-title" class="text-xl font-bold text-indigo-700 mb-4">Steps (Yearly View)</h2>
+            <div class="relative h-96">
+                <canvas id="healthChart"></canvas>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // --- Global Variables and Constants ---
+        const CHART_VIEWS = {
+            YEAR: 'year',
+            MONTH: 'month',
+            WEEK: 'week',
+            DAY: 'day'
+        };
+
+        const chartColors = {
+            primary: '#4f46e5', // Indigo-600
+            secondary: '#e0e7ff', // Indigo-100
+        };
+
+        let currentView = CHART_VIEWS.YEAR;
+        let healthData = []; // Raw daily step data
+        let chartInstance = null;
+
+        const chartTitleEl = document.getElementById('chart-title');
+        const loadingOverlayEl = document.getElementById('loading-overlay');
+        const viewButtons = document.querySelectorAll('.view-btn');
+
+        // --- Utility Functions ---
+
+        /**
+         * Generates mock daily step data for a full year.
+         * The data is an array of objects: [{ date: 'YYYY-MM-DD', steps: 8000 }]
+         * @returns {Array<object>}
+         */
+        function generateMockData() {
+            const data = [];
+            const endDate = moment();
+            const startDate = moment().subtract(365, 'days');
+
+            let currentDay = startDate.clone();
+            while (currentDay.isBefore(endDate)) {
+                // Generate a base step count (e.g., 6000-10000)
+                let steps = Math.floor(Math.random() * (4000) + 6000);
+                // Apply a weekly trend for some variation
+                const dayOfWeek = currentDay.day(); // 0 (Sun) to 6 (Sat)
+                if (dayOfWeek === 0 || dayOfWeek === 6) { // Weekends
+                    steps = Math.floor(steps * 1.1 + Math.random() * 2000);
+                }
+
+                data.push({
+                    date: currentDay.format('YYYY-MM-DD'),
+                    steps: steps
+                });
+                currentDay.add(1, 'day');
+            }
+            return data;
+        }
+
+        /**
+         * Generates detailed mock data for a single day (hourly steps)
+         * @param {string} date - 'YYYY-MM-DD'
+         * @returns {Array<object>}
+         */
+        function generateHourlyData(date) {
+            const hourlyData = [];
+            for (let h = 0; h < 24; h++) {
+                let steps = 0;
+                // Simulate activity primarily between 7am and 10pm
+                if (h >= 7 && h <= 22) {
+                    // Small random movement even when sedentary (10-50 steps)
+                    steps = Math.floor(Math.random() * 40) + 10;
+                    // Spike activity during common walking/active hours (8-10, 12-2, 5-7)
+                    if ([8, 9, 12, 13, 17, 18].includes(h)) {
+                        steps += Math.floor(Math.random() * 500) + 100;
+                    }
+                }
+                hourlyData.push({
+                    hour: h,
+                    steps: steps
+                });
+            }
+            return hourlyData;
+        }
+
+        /**
+         * Aggregates the raw step data based on the selected view (Year, Month, Week, Day).
+         * @param {string} view - 'year', 'month', 'week', 'day'
+         * @returns {object} { labels: Array<string>, data: Array<number> }
+         */
+        function aggregateData(view) {
+            let aggregated = {};
+            let labels = [];
+            let data = [];
+            let title = '';
+
+            const today = moment().format('YYYY-MM-DD');
+
+            if (view === CHART_VIEWS.DAY) {
+                // Day view needs hourly data (mocked)
+                const hourlyData = generateHourlyData(today);
+                labels = hourlyData.map(d => `${d.hour}:00`);
+                data = hourlyData.map(d => d.steps);
+                title = `Steps (Today: ${moment().format('MMM Do, YYYY')})`;
+            } else {
+                // Aggregate daily data for Year/Month/Week
+                const filteredData = healthData; // Use full data for now
+
+                filteredData.forEach(item => {
+                    const date = moment(item.date);
+                    let key = '';
+
+                    switch (view) {
+                        case CHART_VIEWS.YEAR:
+                            // Aggregate by Month
+                            key = date.format('YYYY-MM');
+                            break;
+                        case CHART_VIEWS.MONTH:
+                            // Aggregate by Day of Month
+                            const startOfMonth = moment().startOf('month');
+                            const endOfMonth = moment().endOf('month');
+                            // Filter data to only the current month
+                            if (date.isBetween(startOfMonth, endOfMonth, null, '[]')) {
+                                key = date.format('D'); // Day number
+                            } else {
+                                return; // Skip if not in current month
+                            }
+                            break;
+                        case CHART_VIEWS.WEEK:
+                            // Aggregate by Day of Week (most recent 7 days)
+                            const startOfWeek = moment().subtract(6, 'days').startOf('day');
+                            if (date.isSameOrAfter(startOfWeek)) {
+                                key = date.format('ddd'); // Mon, Tue, etc.
+                            } else {
+                                return; // Skip if not in last 7 days
+                            }
+                            break;
+                    }
+
+                    if (key) {
+                        aggregated[key] = (aggregated[key] || 0) + item.steps;
+                    }
+                });
+
+                // Convert aggregated map to Chart.js compatible arrays
+                labels = Object.keys(aggregated).sort();
+                data = labels.map(key => aggregated[key]);
+
+                // Special handling for labels/titles
+                if (view === CHART_VIEWS.YEAR) {
+                    // Convert YYYY-MM keys to Month names
+                    labels = labels.map(key => moment(key, 'YYYY-MM').format('MMM'));
+                    title = `Steps (Year View: ${moment().year()})`;
+                } else if (view === CHART_VIEWS.MONTH) {
+                    title = `Steps (Month View: ${moment().format('MMMM YYYY')})`;
+                } else if (view === CHART_VIEWS.WEEK) {
+                    // Ensure labels are in correct day order (Mon-Sun)
+                    const daysOfWeek = moment.weekdaysShort(true); // Monday, Tuesday...
+                    const sortedData = daysOfWeek.map(day => {
+                        const dayKey = day.substring(0, 3);
+                        return aggregated[dayKey] || 0; // Use 0 for days without data
+                    });
+                    labels = daysOfWeek;
+                    data = sortedData;
+                    title = `Steps (Last 7 Days)`;
+                }
+            }
+
+            return { labels, data, title };
+        }
+
+        /**
+         * Initializes or updates the Chart.js instance.
+         * @param {object} processedData - { labels, data, title }
+         */
+        function renderChart(processedData) {
+            const ctx = document.getElementById('healthChart').getContext('2d');
+            const { labels, data, title } = processedData;
+
+            chartTitleEl.textContent = title;
+
+            // Chart configuration
+            const chartData = {
+                labels: labels,
+                datasets: [{
+                    label: 'Total Steps',
+                    data: data,
+                    backgroundColor: chartColors.primary,
+                    borderColor: chartColors.primary,
+                    borderWidth: 2,
+                    borderRadius: 8,
+                    barPercentage: 0.8,
+                    categoryPercentage: 0.8,
+                    fill: false
+                }]
+            };
+
+            const chartOptions = {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: { display: false },
+                    tooltip: {
+                        callbacks: {
+                            title: (context) => currentView === CHART_VIEWS.DAY ? `Hour ${context[0].label}` : context[0].label,
+                            label: (context) => `${context.dataset.label}: ${context.parsed.y.toLocaleString()} steps`
+                        },
+                        backgroundColor: 'rgba(0, 0, 0, 0.8)',
+                        titleFont: { size: 14, weight: 'bold' },
+                        bodyFont: { size: 14 },
+                        padding: 10,
+                        cornerRadius: 6,
+                    }
+                },
+                scales: {
+                    y: {
+                        beginAtZero: true,
+                        grid: {
+                            color: chartColors.secondary,
+                            borderDash: [5, 5],
+                        },
+                        ticks: {
+                            color: '#4b5563',
+                            callback: (value) => value.toLocaleString(),
+                        },
+                        title: {
+                            display: true,
+                            text: 'Steps',
+                            color: chartColors.primary
+                        }
+                    },
+                    x: {
+                        grid: { display: false },
+                        ticks: { color: '#4b5563' },
+                    }
+                }
+            };
+
+            if (chartInstance) {
+                // Update existing chart
+                chartInstance.data = chartData;
+                chartInstance.options.scales.x.type = (currentView === CHART_VIEWS.DAY) ? 'category' : 'category';
+                chartInstance.update();
+            } else {
+                // Initialize new chart
+                chartInstance = new Chart(ctx, {
+                    type: 'bar',
+                    data: chartData,
+                    options: chartOptions
+                });
+            }
+        }
+
+        /**
+         * Handles the view switching logic.
+         * @param {string} view - The new view to switch to.
+         */
+        function switchView(view) {
+            if (currentView === view) return; // Prevent unnecessary redraws
+
+            currentView = view;
+
+            // Update button styles
+            viewButtons.forEach(btn => {
+                const isActive = btn.dataset.view === view;
+                btn.classList.toggle('bg-indigo-500', isActive);
+                btn.classList.toggle('text-white', isActive);
+                btn.classList.toggle('bg-white', !isActive);
+                btn.classList.toggle('text-gray-700', !isActive);
+                btn.classList.toggle('hover:bg-indigo-100', !isActive);
+            });
+
+            // Aggregate data for the new view and render
+            const processedData = aggregateData(view);
+            renderChart(processedData);
+        }
+
+        /**
+         * Application startup function.
+         */
+        async function initializeApp() {
+            // 1. Initialize Firebase (if config is available)
+            await window.initFirebase();
+
+            // 2. Generate/Fetch Data
+            healthData = generateMockData();
+
+            // 3. Set up event listeners for view buttons
+            viewButtons.forEach(button => {
+                button.addEventListener('click', () => switchView(button.dataset.view));
+            });
+
+            // 4. Set the initial view (Yearly is a good starting point)
+            switchView(CHART_VIEWS.YEAR);
+            switchView(CHART_VIEWS.MONTH);
+            switchView(CHART_VIEWS.YEAR);
+
+            // 5. Hide loading overlay
+            loadingOverlayEl.style.opacity = '0';
+            setTimeout(() => loadingOverlayEl.classList.add('hidden'), 300);
+            
+        }
+
+        // Start the application when the window loads
+        window.onload = initializeApp;
+    </script>
+</body>
+</html>
