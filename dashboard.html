@@ -1,0 +1,521 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Futuristic Financial Dashboard</title>
+    <!-- Load Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Load Chart.js -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+    <!-- Load Moment.js for date handling -->
+    <script src="https://cdn.jsdelivr.net/npm/moment@2.29.4/moment.min.js"></script>
+    <!-- Load Lucide icons (open-source vector icons) -->
+    <script src="https://unpkg.com/lucide@latest"></script>
+
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        'background': '#1e274a', // Deep Blue/Black
+                        'surface': '#273359',    // Slightly lighter card background
+                        'accent-1': '#3b82f6',   // Blue-500
+                        'accent-2': '#f87171',   // Red-400
+                        'sidebar-start': '#1e40af', // Darker blue for gradient start
+                        'sidebar-end': '#4c1d95',   // Deep purple for gradient end
+                        'text-light': '#e5e7eb', // Light gray
+                        'text-muted': '#9ca3af', // Gray-400
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+        }
+        /* Custom scrollbar for dark theme */
+        ::-webkit-scrollbar {
+            width: 8px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #1e274a;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #4c1d95;
+            border-radius: 4px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: #3b82f6;
+        }
+    </style>
+    <!-- Firebase/Firestore boilerplate -->
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
+        import { getAuth, signInAnonymously, signInWithCustomToken } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+        import { getFirestore, setLogLevel } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+
+        const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
+        const firebaseConfig = typeof __firebase_config !== 'undefined' ? JSON.parse(__firebase_config) : null;
+        const initialAuthToken = typeof __initial_auth_token !== 'undefined' ? __initial_auth_token : null;
+
+        window.db = null;
+        window.auth = null;
+
+        async function initFirebase() {
+            if (!firebaseConfig) {
+                console.warn("Firebase config not found. Running in mock data mode.");
+                return;
+            }
+            try {
+                setLogLevel('error');
+                const app = initializeApp(firebaseConfig);
+                window.db = getFirestore(app);
+                window.auth = getAuth(app);
+
+                if (initialAuthToken) {
+                    await signInWithCustomToken(window.auth, initialAuthToken);
+                } else {
+                    await signInAnonymously(window.auth);
+                }
+                // console.log("Firebase initialized and authenticated.");
+            } catch (error) {
+                console.error("Firebase initialization or sign-in failed:", error);
+            }
+        }
+        window.initFirebase = initFirebase;
+    </script>
+</head>
+<body class="bg-background text-text-light flex min-h-screen">
+
+    <!-- Sidebar -->
+    <div class="hidden md:flex flex-col w-64 bg-sidebar-start bg-gradient-to-br from-sidebar-start to-sidebar-end text-white shadow-2xl p-4 sticky top-0 h-screen">
+        <div class="flex items-center space-x-3 mb-8 p-2">
+            <div class="p-2 rounded-full bg-white bg-opacity-20">
+                <i data-lucide="zap" class="w-6 h-6 text-accent-1"></i>
+            </div>
+            <h2 class="text-xl font-bold tracking-wider">DASHBOARD</h2>
+        </div>
+
+        <nav class="space-y-2 flex-grow">
+            <!-- Navigation Links -->
+            <a href="#" class="flex items-center space-x-3 p-3 rounded-xl bg-white bg-opacity-10 font-semibold transition duration-200 hover:bg-opacity-20">
+                <i data-lucide="layout-dashboard" class="w-5 h-5"></i>
+                <span>Dashboard</span>
+            </a>
+            <a href="#" class="flex items-center space-x-3 p-3 rounded-xl transition duration-200 hover:bg-white hover:bg-opacity-10">
+                <i data-lucide="calendar" class="w-5 h-5"></i>
+                <span>Monthly Stats</span>
+            </a>
+            <a href="#" class="flex items-center space-x-3 p-3 rounded-xl transition duration-200 hover:bg-white hover:bg-opacity-10">
+                <i data-lucide="trophy" class="w-5 h-5"></i>
+                <span>League Stats</span>
+            </a>
+            <a href="#" class="flex items-center space-x-3 p-3 rounded-xl transition duration-200 hover:bg-white hover:bg-opacity-10">
+                <i data-lucide="trending-up" class="w-5 h-5"></i>
+                <span>Market Stats</span>
+            </a>
+            <a href="#" class="flex items-center space-x-3 p-3 rounded-xl transition duration-200 hover:bg-white hover:bg-opacity-10">
+                <i data-lucide="banknote" class="w-5 h-5"></i>
+                <span>Bookmaker Stats</span>
+            </a>
+            <a href="#" class="flex items-center space-x-3 p-3 rounded-xl transition duration-200 hover:bg-white hover:bg-opacity-10">
+                <i data-lucide="calendar-check" class="w-5 h-5"></i>
+                <span>Event Stats</span>
+            </a>
+            <a href="#" class="flex items-center space-x-3 p-3 rounded-xl transition duration-200 hover:bg-white hover:bg-opacity-10">
+                <i data-lucide="sigma" class="w-5 h-5"></i>
+                <span>Complex Analysis</span>
+            </a>
+        </nav>
+
+        <div class="mt-auto pt-4 border-t border-white border-opacity-10">
+            <a href="#" class="flex items-center justify-center p-3 rounded-xl text-xs font-bold uppercase tracking-wider text-text-light bg-accent-1 hover:bg-accent-1/90 transition duration-200">
+                <i data-lucide="rocket" class="w-4 h-4 mr-2"></i>
+                Upgrade to Pro
+            </a>
+        </div>
+    </div>
+
+    <!-- Main Content -->
+    <div class="flex-1 p-4 md:p-8 overflow-auto">
+        <!-- Top Header & Controls -->
+        <header class="flex justify-between items-center mb-6">
+            <h1 class="text-3xl font-extrabold text-white">DASHBOARD</h1>
+            <div class="flex items-center space-x-4">
+                <button class="text-text-muted hover:text-white transition"><i data-lucide="search" class="w-5 h-5"></i></button>
+                <button class="text-text-muted hover:text-white transition"><i data-lucide="settings" class="w-5 h-5"></i></button>
+                <div class="w-8 h-8 rounded-full bg-gray-500"></div>
+            </div>
+        </header>
+
+        <!-- Main Chart Section -->
+        <div class="bg-surface rounded-xl shadow-2xl p-4 md:p-6 mb-8 border border-surface/50">
+            
+            <div class="flex justify-between items-center mb-4 border-b border-white border-opacity-10 pb-4">
+                <div class="flex items-center space-x-2">
+                    <h2 class="text-xl font-bold text-text-light" id="main-chart-title">STAKE</h2>
+                    <!-- Tab Switcher -->
+                    <div id="main-tabs" class="inline-flex rounded-full bg-background p-1 text-sm text-text-muted">
+                        <button data-tab="stake" class="tab-btn px-4 py-1 rounded-full font-semibold transition-colors duration-200 bg-accent-1 text-white shadow-lg">Stake</button>
+                        <button data-tab="pl" class="tab-btn px-4 py-1 rounded-full font-semibold transition-colors duration-200 hover:text-white">PL</button>
+                        <button data-tab="roi" class="tab-btn px-4 py-1 rounded-full font-semibold transition-colors duration-200 hover:text-white">ROI</button>
+                    </div>
+                </div>
+                
+                <!-- Time View Selector -->
+                <div id="view-selector" class="inline-flex rounded-full bg-background p-1 text-xs text-text-muted">
+                    <button data-view="year" class="view-btn px-3 py-1 rounded-full font-semibold transition-colors duration-200 bg-surface/50 text-white">Year</button>
+                    <button data-view="month" class="view-btn px-3 py-1 rounded-full font-semibold transition-colors duration-200 hover:bg-surface/50 hover:text-white">Month</button>
+                    <button data-view="week" class="view-btn px-3 py-1 rounded-full font-semibold transition-colors duration-200 hover:bg-surface/50 hover:text-white">Week</button>
+                    <button data-view="day" class="view-btn px-3 py-1 rounded-full font-semibold transition-colors duration-200 hover:bg-surface/50 hover:text-white">Day</button>
+                </div>
+            </div>
+
+            <div class="relative h-72 lg:h-96">
+                <canvas id="mainChart"></canvas>
+            </div>
+        </div>
+        
+        <!-- Three Smaller Charts Section -->
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+            <!-- Card 1: Total Stake -->
+            <div class="bg-surface rounded-xl p-4 shadow-xl border border-surface/50">
+                <div class="flex items-center space-x-3 mb-3">
+                    <div class="p-2 rounded-full bg-accent-1/20 text-accent-1">
+                        <i data-lucide="wallet" class="w-5 h-5"></i>
+                    </div>
+                    <h3 class="text-text-muted text-sm font-semibold">Total Stake</h3>
+                </div>
+                <p class="text-2xl font-extrabold text-white mb-2">$ 763,215</p>
+                <div class="relative h-32">
+                    <canvas id="smallChart1"></canvas>
+                </div>
+            </div>
+
+            <!-- Card 2: Daily PL -->
+            <div class="bg-surface rounded-xl p-4 shadow-xl border border-surface/50">
+                <div class="flex items-center space-x-3 mb-3">
+                    <div class="p-2 rounded-full bg-accent-2/20 text-accent-2">
+                        <i data-lucide="trending-up" class="w-5 h-5"></i>
+                    </div>
+                    <h3 class="text-text-muted text-sm font-semibold">Daily P/L</h3>
+                </div>
+                <p class="text-2xl font-extrabold text-white mb-2">+ $ 3,500</p>
+                <div class="relative h-32">
+                    <canvas id="smallChart2"></canvas>
+                </div>
+            </div>
+
+            <!-- Card 3: Avg. ROI -->
+            <div class="bg-surface rounded-xl p-4 shadow-xl border border-surface/50">
+                <div class="flex items-center space-x-3 mb-3">
+                    <div class="p-2 rounded-full bg-green-500/20 text-green-500">
+                        <i data-lucide="percent" class="w-5 h-5"></i>
+                    </div>
+                    <h3 class="text-text-muted text-sm font-semibold">Avg. ROI</h3>
+                </div>
+                <p class="text-2xl font-extrabold text-white mb-2">12.5%</p>
+                <div class="relative h-32">
+                    <canvas id="smallChart3"></canvas>
+                </div>
+            </div>
+        </div>
+
+    </div>
+
+    <!-- Chart and Interaction Logic -->
+    <script>
+        // --- Global Config ---
+        const CHART_VIEWS = { YEAR: 'year', MONTH: 'month', WEEK: 'week', DAY: 'day' };
+        let currentView = CHART_VIEWS.YEAR;
+        let currentTab = 'stake';
+        let mainChartInstance = null;
+        let chartData = []; // Raw daily data storage
+
+        // --- DOM Elements ---
+        const mainTitleEl = document.getElementById('main-chart-title');
+        const viewButtons = document.querySelectorAll('#view-selector .view-btn');
+        const tabButtons = document.querySelectorAll('#main-tabs .tab-btn');
+
+        // --- Data Generation Functions ---
+
+        /** Generates mock daily data for a full year. */
+        function generateMockData() {
+            const data = [];
+            const endDate = moment();
+            const startDate = moment().subtract(365, 'days');
+
+            let currentDay = startDate.clone();
+            while (currentDay.isBefore(endDate)) {
+                const dayString = currentDay.format('YYYY-MM-DD');
+
+                // Generate three mock metrics with different trends
+                const baseStake = Math.floor(Math.random() * 20000 + 50000);
+                const dailyPL = Math.floor(Math.random() * 2000 - 500); // Can be negative
+                const dailyROI = (dailyPL / baseStake) * 100 * (1 + Math.random() * 0.5); // Small ROI percentage
+
+                data.push({
+                    date: dayString,
+                    stake: baseStake,
+                    pl: dailyPL,
+                    roi: Math.max(0, parseFloat(dailyROI.toFixed(2))) // Keep ROI non-negative for display
+                });
+                currentDay.add(1, 'day');
+            }
+            return data;
+        }
+
+        /** Aggregates the raw step data based on the selected view (Year, Month, Week, Day). */
+        function aggregateData(view, metric) {
+            let aggregated = {};
+            let labels = [];
+            let data = [];
+            let unit = (metric === 'roi') ? '%' : '$';
+
+            // Function to filter/group data based on the view
+            const filterAndGroup = (item, date) => {
+                let key = '';
+                switch (view) {
+                    case CHART_VIEWS.YEAR:
+                        key = date.format('YYYY-MM'); // Group by Month
+                        break;
+                    case CHART_VIEWS.MONTH:
+                        // Only use data from the last 30 days for mock monthly view
+                        if (moment().diff(date, 'days') <= 30) {
+                            key = date.format('D'); // Day number
+                        }
+                        break;
+                    case CHART_VIEWS.WEEK:
+                        // Only use data from the last 7 days
+                        if (moment().diff(date, 'days') <= 7) {
+                            key = date.format('ddd'); // Day of week (Mon, Tue, etc.)
+                        }
+                        break;
+                    case CHART_VIEWS.DAY:
+                        // Day view doesn't aggregate daily data; it needs hourly (mocked as daily data points here)
+                        // For simplicity in this demo, we'll just show the last 24 daily points
+                        key = item.date;
+                        break;
+                }
+                return key;
+            };
+
+            chartData.forEach(item => {
+                const date = moment(item.date);
+                const key = filterAndGroup(item, date);
+
+                if (key) {
+                    // For Stake (Value), sum them up. For ROI (Percentage), average them.
+                    if (metric === 'roi') {
+                        aggregated[key] = (aggregated[key] || { sum: 0, count: 0 });
+                        aggregated[key].sum += item[metric];
+                        aggregated[key].count += 1;
+                    } else {
+                        aggregated[key] = (aggregated[key] || 0) + item[metric];
+                    }
+                }
+            });
+
+            // Final processing
+            labels = Object.keys(aggregated).sort();
+            data = labels.map(key => {
+                if (metric === 'roi') {
+                    const avg = aggregated[key].sum / aggregated[key].count;
+                    return parseFloat(avg.toFixed(2));
+                }
+                return aggregated[key];
+            });
+
+            // Special handling for labels (e.g., converting YYYY-MM to Month names)
+            if (view === CHART_VIEWS.YEAR) {
+                labels = labels.map(key => moment(key, 'YYYY-MM').format('MMM'));
+            } else if (view === CHART_VIEWS.WEEK) {
+                // Ensure labels are in correct day order (Mon-Sun)
+                const daysOfWeek = moment.weekdaysShort(true);
+                const sortedData = daysOfWeek.map(dayKey => {
+                    const index = labels.findIndex(l => l === dayKey);
+                    return index !== -1 ? data[index] : 0;
+                });
+                labels = daysOfWeek;
+                data = sortedData;
+            } else if (view === CHART_VIEWS.DAY) {
+                 // For day view, just show the last 24 points
+                 labels = chartData.slice(-24).map(d => moment(d.date).format('MM/DD'));
+                 data = chartData.slice(-24).map(d => d[metric]);
+            }
+
+            return { labels, data, unit };
+        }
+
+        // --- Chart Rendering Functions ---
+
+        function getChartConfig(type, labels, data, metric, unit) {
+            const isLine = type === 'line';
+            const accentColor = metric === 'pl' ? tailwind.config.theme.extend.colors['accent-2'] : tailwind.config.theme.extend.colors['accent-1'];
+
+            return {
+                type: type,
+                data: {
+                    labels: labels,
+                    datasets: [{
+                        label: metric.toUpperCase(),
+                        data: data,
+                        borderColor: accentColor,
+                        backgroundColor: isLine ? accentColor + '40' : accentColor,
+                        borderWidth: 3,
+                        pointRadius: isLine ? 5 : 0,
+                        pointBackgroundColor: accentColor,
+                        tension: 0.4, // Smooth curve for line charts
+                        fill: isLine ? 'origin' : false,
+                        borderRadius: 4
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: { display: false },
+                        tooltip: {
+                            callbacks: {
+                                label: (c) => `${c.dataset.label}: ${unit === '$' ? '$ ' : ''}${c.parsed.y.toLocaleString()}${unit === '%' ? '%' : ''}`
+                            },
+                            backgroundColor: tailwind.config.theme.extend.colors['surface'],
+                            titleFont: { size: 14, weight: 'bold' },
+                            bodyFont: { size: 14 },
+                            padding: 10,
+                            cornerRadius: 6,
+                            borderWidth: 1,
+                            borderColor: tailwind.config.theme.extend.colors['accent-1'] + '40'
+                        }
+                    },
+                    scales: {
+                        y: {
+                            beginAtZero: false,
+                            grid: { color: tailwind.config.theme.extend.colors['text-muted'] + '20' },
+                            ticks: {
+                                color: tailwind.config.theme.extend.colors['text-light'],
+                                callback: (value) => unit === '$' ? `$${(value / 1000).toFixed(0)}K` : `${value}${unit}`,
+                            },
+                        },
+                        x: {
+                            grid: { display: false },
+                            ticks: { color: tailwind.config.theme.extend.colors['text-muted'] },
+                        }
+                    }
+                }
+            };
+        }
+
+        /** Initializes or updates the Main Chart. */
+        function renderMainChart() {
+            const canvas = document.getElementById('mainChart');
+            const { labels, data, unit } = aggregateData(currentView, currentTab);
+
+            mainTitleEl.textContent = currentTab.toUpperCase();
+
+            const config = getChartConfig('line', labels, data, currentTab, unit);
+
+            if (mainChartInstance) {
+                // Update existing chart
+                mainChartInstance.data = config.data;
+                mainChartInstance.options.scales.y.ticks.callback = config.options.scales.y.ticks.callback;
+                mainChartInstance.update();
+            } else {
+                // Initialize new chart
+                mainChartInstance = new Chart(canvas.getContext('2d'), config);
+            }
+        }
+
+        /** Initializes the three small charts below the main one. */
+        function renderSmallCharts() {
+            const latestData = chartData.slice(-30); // Use last 30 days for small charts
+            const labels = latestData.map(d => moment(d.date).format('DD'));
+            
+            // Chart 1: Total Stake (Line)
+            const data1 = latestData.map(d => d.stake);
+            new Chart(document.getElementById('smallChart1').getContext('2d'), getChartConfig('line', labels, data1, 'stake', '$'));
+
+            // Chart 2: Daily P/L (Bar - using accent-2)
+            const data2 = latestData.map(d => d.pl);
+            new Chart(document.getElementById('smallChart2').getContext('2d'), getChartConfig('bar', labels, data2, 'pl', '$'));
+
+            // Chart 3: Avg. ROI (Line - using green)
+            const data3 = latestData.map(d => d.roi);
+            const config3 = getChartConfig('line', labels, data3, 'roi', '%');
+            // Customize color for ROI
+            config3.data.datasets[0].borderColor = '#10b981'; // Green-500
+            config3.data.datasets[0].backgroundColor = '#10b98140';
+            new Chart(document.getElementById('smallChart3').getContext('2d'), config3);
+        }
+
+        // --- Interaction Handlers ---
+
+        function switchView(view) {
+            currentView = view;
+            
+            viewButtons.forEach(btn => {
+                const isActive = btn.dataset.view === view;
+                btn.classList.toggle('bg-surface/50', isActive);
+                btn.classList.toggle('text-white', isActive);
+                btn.classList.toggle('hover:bg-surface/50', !isActive);
+                btn.classList.toggle('text-text-muted', !isActive);
+            });
+
+            renderMainChart();
+        }
+
+        function switchTab(tab) {
+            currentTab = tab;
+
+            tabButtons.forEach(btn => {
+                const isActive = btn.dataset.tab === tab;
+                const accent = tab === 'pl' ? 'bg-accent-2' : 'bg-accent-1';
+                
+                btn.classList.toggle('bg-accent-1', tab !== 'pl' && isActive);
+                btn.classList.toggle('bg-accent-2', tab === 'pl' && isActive);
+                btn.classList.toggle('text-white', isActive);
+                btn.classList.toggle('shadow-lg', isActive);
+                
+                btn.classList.toggle('bg-transparent', !isActive);
+                btn.classList.toggle('hover:text-white', !isActive);
+                btn.classList.toggle('text-text-muted', !isActive);
+                btn.classList.toggle('shadow-none', !isActive);
+            });
+
+            renderMainChart();
+        }
+
+
+        /** Application startup function. */
+        async function initializeApp() {
+            // 1. Initialize Firebase (optional/boilerplate)
+            await window.initFirebase();
+
+            // 2. Load Data (Currently Mocked)
+            chartData = generateMockData();
+
+            // 3. Set up Event Listeners
+            viewButtons.forEach(button => {
+                button.addEventListener('click', () => switchView(button.dataset.view));
+            });
+            tabButtons.forEach(button => {
+                button.addEventListener('click', () => switchTab(button.dataset.tab));
+            });
+            
+            // 4. Initial Render
+            // Set initial state for tabs and views
+            switchTab('stake');
+            switchView(CHART_VIEWS.YEAR); 
+            renderSmallCharts();
+
+            // 5. Replace Lucide icons
+            lucide.createIcons();
+        }
+
+        // Start the application when the window loads
+        window.onload = initializeApp;
+    </script>
+</body>
+</html>
