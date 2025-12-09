@@ -14,18 +14,19 @@
     <script src="https://unpkg.com/lucide@latest"></script>
 
     <script>
-        tailwind.config = {
+       tailwind.config = {
             theme: {
                 extend: {
                     colors: {
-                        'background': '#1e274a', // Deep Blue/Black
-                        'surface': '#273359',    // Slightly lighter card background
-                        'accent-1': '#3b82f6',   // Blue-500
-                        'accent-2': '#f87171',   // Red-400
-                        'sidebar-start': '#1e40af', // Darker blue for gradient start
-                        'sidebar-end': '#4c1d95',   // Deep purple for gradient end
-                        'text-light': '#e5e7eb', // Light gray
-                        'text-muted': '#9ca3af', // Gray-400
+                        'background': '#0d0d21',   // Very deep, dark blue/black
+                        'surface': '#1a1a36',      // Darker card background
+                        'accent-1': '#00ffff',     // NEON CYAN/BLUE (Primary accent)
+                        'accent-2': '#ff00aa',     // NEON PINK/MAGENTA (Secondary/Alert accent)
+                        'sidebar-start': '#0d0d21',// Matches background for smooth sidebar start
+                        'sidebar-end': '#4d0099',  // Deep Violet/Purple for gradient end
+                        'text-light': '#f0f8ff',   // Crisp white/azure
+                        'text-muted': '#8b8c9d',   // Muted gray for secondary text
+                        'chart-green': '#39ff14',  // NEON LIME GREEN (Success/ROI)
                     }
                 }
             }
@@ -131,9 +132,9 @@
         </nav>
 
         <div class="mt-auto pt-4 border-t border-white border-opacity-10">
-            <a href="#" class="flex items-center justify-center p-3 rounded-xl text-xs font-bold uppercase tracking-wider text-text-light bg-accent-1 hover:bg-accent-1/90 transition duration-200">
+            <a href="#" class="flex items-center justify-center p-3 rounded-xl text-xs font-bold uppercase tracking-wider text-text-light bg-accent-2 hover:bg-accent-1/90 transition duration-200">
                 <i data-lucide="rocket" class="w-4 h-4 mr-2"></i>
-                CREATE PDF
+                  CREATE PDF
             </a>
         </div>
     </div>
@@ -150,7 +151,7 @@
             </div>
         </header>
 
-        <!-- Main Chart Section -->
+        <!-- Main Chart Section (STAKE/PL/ROI) -->
         <div class="bg-surface rounded-xl shadow-2xl p-4 md:p-6 mb-8 border border-surface/50">
             
             <div class="flex justify-between items-center mb-4 border-b border-white border-opacity-10 pb-4">
@@ -178,47 +179,48 @@
             </div>
         </div>
         
-        <!-- Three Smaller Charts Section -->
+        <!-- NEW Three Small Charts Section (Events, Stake by Market, ROI by Market) -->
         <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
-            <!-- Card 1: Total Stake -->
+            <!-- Chart 1: Events per Week (Line Chart) -->
             <div class="bg-surface rounded-xl p-4 shadow-xl border border-surface/50">
                 <div class="flex items-center space-x-3 mb-3">
                     <div class="p-2 rounded-full bg-accent-1/20 text-accent-1">
-                        <i data-lucide="wallet" class="w-5 h-5"></i>
+                        <i data-lucide="calendar-heart" class="w-5 h-5"></i>
                     </div>
-                    <h3 class="text-text-muted text-sm font-semibold">Total Stake</h3>
+                    <h3 class="text-text-muted text-sm font-semibold">Total Events Tracked</h3>
                 </div>
-                <p class="text-2xl font-extrabold text-white mb-2">$ 763,215</p>
+                <!-- Total Events (Written above the chart) -->
+                <p class="text-2xl font-extrabold text-white mb-2" id="total-events-count">...</p>
                 <div class="relative h-32">
-                    <canvas id="smallChart1"></canvas>
+                    <canvas id="eventsPerWeekChart"></canvas>
                 </div>
             </div>
 
-            <!-- Card 2: Daily PL -->
+            <!-- Chart 2: Total Stake per Market Group (Bar Chart) -->
             <div class="bg-surface rounded-xl p-4 shadow-xl border border-surface/50">
                 <div class="flex items-center space-x-3 mb-3">
                     <div class="p-2 rounded-full bg-accent-2/20 text-accent-2">
-                        <i data-lucide="trending-up" class="w-5 h-5"></i>
+                        <i data-lucide="banknote" class="w-5 h-5"></i>
                     </div>
-                    <h3 class="text-text-muted text-sm font-semibold">Daily P/L</h3>
+                    <h3 class="text-text-muted text-sm font-semibold">Stake per Market Group</h3>
                 </div>
-                <p class="text-2xl font-extrabold text-white mb-2">+ $ 3,500</p>
+                <p class="text-2xl font-extrabold text-white mb-2">$ 8,500 <span class="text-text-muted text-sm font-normal"> (Weekly Avg)</span></p>
                 <div class="relative h-32">
-                    <canvas id="smallChart2"></canvas>
+                    <canvas id="stakePerMarketChart"></canvas>
                 </div>
             </div>
 
-            <!-- Card 3: Avg. ROI -->
+            <!-- Chart 3: Total ROI per Market Group (Bar Chart) -->
             <div class="bg-surface rounded-xl p-4 shadow-xl border border-surface/50">
                 <div class="flex items-center space-x-3 mb-3">
-                    <div class="p-2 rounded-full bg-green-500/20 text-green-500">
+                    <div class="p-2 rounded-full bg-chart-green/20 text-chart-green">
                         <i data-lucide="percent" class="w-5 h-5"></i>
                     </div>
-                    <h3 class="text-text-muted text-sm font-semibold">Avg. ROI</h3>
+                    <h3 class="text-text-muted text-sm font-semibold">ROI per Market Group</h3>
                 </div>
-                <p class="text-2xl font-extrabold text-white mb-2">12.5%</p>
+                <p class="text-2xl font-extrabold text-white mb-2">15.2% <span class="text-text-muted text-sm font-normal"> (Avg ROI)</span></p>
                 <div class="relative h-32">
-                    <canvas id="smallChart3"></canvas>
+                    <canvas id="roiPerMarketChart"></canvas>
                 </div>
             </div>
         </div>
@@ -229,6 +231,7 @@
     <script>
         // --- Global Config ---
         const CHART_VIEWS = { YEAR: 'year', MONTH: 'month', WEEK: 'week', DAY: 'day' };
+        const MARKET_GROUPS = ["Corner Handicap", "Card Handicap", "Corner O/U", "Card O/U"];
         let currentView = CHART_VIEWS.YEAR;
         let currentTab = 'stake';
         let mainChartInstance = null;
@@ -236,6 +239,7 @@
 
         // --- DOM Elements ---
         const mainTitleEl = document.getElementById('main-chart-title');
+        const totalEventsCountEl = document.getElementById('total-events-count');
         const viewButtons = document.querySelectorAll('#view-selector .view-btn');
         const tabButtons = document.querySelectorAll('#main-tabs .tab-btn');
 
@@ -246,6 +250,8 @@
             const data = [];
             const endDate = moment();
             const startDate = moment().subtract(365, 'days');
+            const totalEvents = Math.floor(Math.random() * 500) + 1000;
+            totalEventsCountEl.textContent = totalEvents.toLocaleString(); // Update DOM
 
             let currentDay = startDate.clone();
             while (currentDay.isBefore(endDate)) {
@@ -253,49 +259,61 @@
 
                 // Generate three mock metrics with different trends
                 const baseStake = Math.floor(Math.random() * 20000 + 50000);
-                const dailyPL = Math.floor(Math.random() * 2000 - 500); // Can be negative
-                const dailyROI = (dailyPL / baseStake) * 100 * (1 + Math.random() * 0.5); // Small ROI percentage
+                const dailyPL = Math.floor(Math.random() * 2000 - 500);
+                const dailyROI = (dailyPL / baseStake) * 100 * (1 + Math.random() * 0.5);
 
                 data.push({
                     date: dayString,
                     stake: baseStake,
                     pl: dailyPL,
-                    roi: Math.max(0, parseFloat(dailyROI.toFixed(2))) // Keep ROI non-negative for display
+                    roi: Math.max(0, parseFloat(dailyROI.toFixed(2))),
+                    events: Math.floor(Math.random() * 15 + 5) // Daily event count
                 });
                 currentDay.add(1, 'day');
             }
             return data;
         }
 
-        /** Aggregates the raw step data based on the selected view (Year, Month, Week, Day). */
+        /** Generates mock data for market group comparison charts. */
+        function generateMarketData() {
+            const stakeData = {};
+            const roiData = {};
+            
+            // Generate distinct data for each market group
+            MARKET_GROUPS.forEach(market => {
+                // Stake: large, varying numbers
+                stakeData[market] = Math.floor(Math.random() * 30000 + 5000);
+                // ROI: small percentages (can be negative, but let's keep it mostly positive for the look)
+                roiData[market] = parseFloat((Math.random() * 20 - 5).toFixed(1)); 
+            });
+
+            return { stakeData, roiData };
+        }
+
+        /** Aggregates the main chart data based on the selected view. (Unchanged from previous version, just included for completeness) */
         function aggregateData(view, metric) {
             let aggregated = {};
             let labels = [];
             let data = [];
             let unit = (metric === 'roi') ? '%' : '$';
 
-            // Function to filter/group data based on the view
             const filterAndGroup = (item, date) => {
                 let key = '';
                 switch (view) {
                     case CHART_VIEWS.YEAR:
-                        key = date.format('YYYY-MM'); // Group by Month
+                        key = date.format('YYYY-MM');
                         break;
                     case CHART_VIEWS.MONTH:
-                        // Only use data from the last 30 days for mock monthly view
                         if (moment().diff(date, 'days') <= 30) {
-                            key = date.format('D'); // Day number
+                            key = date.format('D');
                         }
                         break;
                     case CHART_VIEWS.WEEK:
-                        // Only use data from the last 7 days
                         if (moment().diff(date, 'days') <= 7) {
-                            key = date.format('ddd'); // Day of week (Mon, Tue, etc.)
+                            key = date.format('ddd');
                         }
                         break;
                     case CHART_VIEWS.DAY:
-                        // Day view doesn't aggregate daily data; it needs hourly (mocked as daily data points here)
-                        // For simplicity in this demo, we'll just show the last 24 daily points
                         key = item.date;
                         break;
                 }
@@ -307,7 +325,6 @@
                 const key = filterAndGroup(item, date);
 
                 if (key) {
-                    // For Stake (Value), sum them up. For ROI (Percentage), average them.
                     if (metric === 'roi') {
                         aggregated[key] = (aggregated[key] || { sum: 0, count: 0 });
                         aggregated[key].sum += item[metric];
@@ -318,7 +335,6 @@
                 }
             });
 
-            // Final processing
             labels = Object.keys(aggregated).sort();
             data = labels.map(key => {
                 if (metric === 'roi') {
@@ -328,11 +344,9 @@
                 return aggregated[key];
             });
 
-            // Special handling for labels (e.g., converting YYYY-MM to Month names)
             if (view === CHART_VIEWS.YEAR) {
                 labels = labels.map(key => moment(key, 'YYYY-MM').format('MMM'));
             } else if (view === CHART_VIEWS.WEEK) {
-                // Ensure labels are in correct day order (Mon-Sun)
                 const daysOfWeek = moment.weekdaysShort(true);
                 const sortedData = daysOfWeek.map(dayKey => {
                     const index = labels.findIndex(l => l === dayKey);
@@ -341,7 +355,6 @@
                 labels = daysOfWeek;
                 data = sortedData;
             } else if (view === CHART_VIEWS.DAY) {
-                 // For day view, just show the last 24 points
                  labels = chartData.slice(-24).map(d => moment(d.date).format('MM/DD'));
                  data = chartData.slice(-24).map(d => d[metric]);
             }
@@ -349,11 +362,11 @@
             return { labels, data, unit };
         }
 
-        // --- Chart Rendering Functions ---
+        // --- Chart Configuration Templates ---
 
-        function getChartConfig(type, labels, data, metric, unit) {
+        function getChartConfig(type, labels, data, metric, unit, colorKey) {
             const isLine = type === 'line';
-            const accentColor = metric === 'pl' ? tailwind.config.theme.extend.colors['accent-2'] : tailwind.config.theme.extend.colors['accent-1'];
+            const accentColor = tailwind.config.theme.extend.colors[colorKey] || tailwind.config.theme.extend.colors['accent-1'];
 
             return {
                 type: type,
@@ -364,10 +377,10 @@
                         data: data,
                         borderColor: accentColor,
                         backgroundColor: isLine ? accentColor + '40' : accentColor,
-                        borderWidth: 3,
+                        borderWidth: isLine ? 3 : 0,
                         pointRadius: isLine ? 5 : 0,
                         pointBackgroundColor: accentColor,
-                        tension: 0.4, // Smooth curve for line charts
+                        tension: 0.4,
                         fill: isLine ? 'origin' : false,
                         borderRadius: 4
                     }]
@@ -392,11 +405,11 @@
                     },
                     scales: {
                         y: {
-                            beginAtZero: false,
+                            beginAtZero: true,
                             grid: { color: tailwind.config.theme.extend.colors['text-muted'] + '20' },
                             ticks: {
                                 color: tailwind.config.theme.extend.colors['text-light'],
-                                callback: (value) => unit === '$' ? `$${(value / 1000).toFixed(0)}K` : `${value}${unit}`,
+                                callback: (value) => unit === '$' ? (value > 1000 ? `$${(value / 1000).toFixed(0)}K` : `$${value}`) : `${value}${unit}`,
                             },
                         },
                         x: {
@@ -408,49 +421,155 @@
             };
         }
 
+        // --- Chart Rendering Functions ---
+
         /** Initializes or updates the Main Chart. */
         function renderMainChart() {
             const canvas = document.getElementById('mainChart');
             const { labels, data, unit } = aggregateData(currentView, currentTab);
+            const colorKey = currentTab === 'pl' ? 'accent-2' : 'accent-1';
 
             mainTitleEl.textContent = currentTab.toUpperCase();
 
-            const config = getChartConfig('line', labels, data, currentTab, unit);
+            const config = getChartConfig('line', labels, data, currentTab, unit, colorKey);
+            config.options.scales.y.beginAtZero = false; // Stake and PL shouldn't start at 0
 
             if (mainChartInstance) {
-                // Update existing chart
                 mainChartInstance.data = config.data;
                 mainChartInstance.options.scales.y.ticks.callback = config.options.scales.y.ticks.callback;
                 mainChartInstance.update();
             } else {
-                // Initialize new chart
                 mainChartInstance = new Chart(canvas.getContext('2d'), config);
             }
         }
 
-        /** Initializes the three small charts below the main one. */
-        function renderSmallCharts() {
-            const latestData = chartData.slice(-30); // Use last 30 days for small charts
-            const labels = latestData.map(d => moment(d.date).format('DD'));
+        /** Renders the Events per Week chart. */
+        function renderEventsChart() {
+            const latestData = chartData.slice(-56); // Last 8 weeks
             
-            // Chart 1: Total Stake (Line)
-            const data1 = latestData.map(d => d.stake);
-            new Chart(document.getElementById('smallChart1').getContext('2d'), getChartConfig('line', labels, data1, 'stake', '$'));
+            // Group data by week number (Sun-Sat)
+            const weeklyEvents = {};
+            latestData.forEach(item => {
+                const date = moment(item.date);
+                const weekKey = date.week();
+                weeklyEvents[weekKey] = (weeklyEvents[weekKey] || 0) + item.events;
+            });
+            
+            const labels = Object.keys(weeklyEvents).sort().map(w => `Wk ${w}`);
+            const data = Object.values(weeklyEvents).sort((a,b) => {
+                // Ensure data array aligns with sorted labels (week numbers)
+                const sortedKeys = Object.keys(weeklyEvents).sort();
+                return sortedKeys.findIndex(k => weeklyEvents[k] === a) - sortedKeys.findIndex(k => weeklyEvents[k] === b);
+            });
 
-            // Chart 2: Daily P/L (Bar - using accent-2)
-            const data2 = latestData.map(d => d.pl);
-            new Chart(document.getElementById('smallChart2').getContext('2d'), getChartConfig('bar', labels, data2, 'pl', '$'));
+            // Adjust data to align correctly with sorted labels
+            const orderedData = Object.keys(weeklyEvents).sort((a, b) => a - b).map(k => weeklyEvents[k]);
 
-            // Chart 3: Avg. ROI (Line - using green)
-            const data3 = latestData.map(d => d.roi);
-            const config3 = getChartConfig('line', labels, data3, 'roi', '%');
-            // Customize color for ROI
-            config3.data.datasets[0].borderColor = '#10b981'; // Green-500
-            config3.data.datasets[0].backgroundColor = '#10b98140';
-            new Chart(document.getElementById('smallChart3').getContext('2d'), config3);
+            const config = getChartConfig('line', labels, orderedData, 'Events', ' Events', 'accent-1');
+            config.options.elements = { line: { tension: 0.2 }, point: { radius: 3 } };
+
+            new Chart(document.getElementById('eventsPerWeekChart').getContext('2d'), config);
         }
 
-        // --- Interaction Handlers ---
+        /** Renders the Stake and ROI per Market charts. */
+        function getChartConfig(type, labels, data, metric, unit, colorKey) {
+            const isLine = type === 'line';
+            const accentColor = tailwind.config.theme.extend.colors[colorKey] || tailwind.config.theme.extend.colors['accent-1'];
+
+            // Determine background and border settings for neon outlines
+            let backgroundColor;
+            let borderWidth;
+            let pointRadius = 0;
+
+            if (isLine) {
+                // Line charts use filled area under the line
+                backgroundColor = accentColor + '40';
+                borderWidth = 3;
+                pointRadius = 5;
+            } else { // Bar charts
+                // Set background to transparent for the outline effect
+                backgroundColor = 'transparent';
+                // Set border width to make the outline visible
+                borderWidth = 2; 
+            }
+
+            return {
+                type: type,
+                data: {
+                    labels: labels,
+                    datasets: [{
+                        label: metric.toUpperCase(),
+                        data: data,
+                        borderColor: accentColor, // The outline color
+                        backgroundColor: backgroundColor,
+                        borderWidth: borderWidth,
+                        pointRadius: pointRadius,
+                        pointBackgroundColor: accentColor,
+                        tension: 0.4,
+                        fill: isLine ? 'origin' : false,
+                        borderRadius: 4
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: { display: false },
+                        tooltip: {
+                            callbacks: {
+                                label: (c) => `${c.dataset.label}: ${unit === '$' ? '$ ' : ''}${c.parsed.y.toLocaleString()}${unit === '%' ? '%' : ''}`
+                            },
+                            backgroundColor: tailwind.config.theme.extend.colors['surface'],
+                            titleFont: { size: 14, weight: 'bold' },
+                            bodyFont: { size: 14 },
+                            padding: 10,
+                            cornerRadius: 6,
+                            borderWidth: 1,
+                            borderColor: tailwind.config.theme.extend.colors['accent-1'] + '40'
+                        }
+                    },
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            grid: { color: tailwind.config.theme.extend.colors['text-muted'] + '20' },
+                            ticks: {
+                                color: tailwind.config.theme.extend.colors['text-light'],
+                                callback: (value) => unit === '$' ? (value > 1000 ? `$${(value / 1000).toFixed(0)}K` : `$${value}`) : `${value}${unit}`,
+                            },
+                        },
+                        x: {
+                            grid: { display: false },
+                            ticks: { color: tailwind.config.theme.extend.colors['text-muted'] },
+                        }
+                    }
+                }
+            };
+        }
+
+        /** Renders the Stake and ROI per Market charts. */
+        function renderMarketCharts() {
+            const { stakeData, roiData } = generateMarketData();
+
+            // --- Stake per Market Chart (Bar Chart) ---
+            const stakeLabels = MARKET_GROUPS;
+            const stakeValues = MARKET_GROUPS.map(m => stakeData[m]);
+            // Uses the modified getChartConfig which now returns transparent background for 'bar' charts
+            const stakeConfig = getChartConfig('bar', stakeLabels, stakeValues, 'Stake', '$', 'accent-2');
+            stakeConfig.options.scales.x.ticks.callback = (val) => stakeLabels[val].split(' ')[0]; // Use only first word of label
+            new Chart(document.getElementById('stakePerMarketChart').getContext('2d'), stakeConfig);
+
+            // --- ROI per Market Chart (Bar Chart) ---
+            const roiLabels = MARKET_GROUPS;
+            const roiValues = MARKET_GROUPS.map(m => roiData[m]);
+            // Uses the modified getChartConfig
+            const roiConfig = getChartConfig('bar', roiLabels, roiValues, 'ROI', '%', 'chart-green');
+            roiConfig.options.scales.x.ticks.callback = (val) => roiLabels[val].split(' ')[0]; // Use only first word of label
+            roiConfig.options.scales.y.beginAtZero = false; // ROI can be negative
+            
+            new Chart(document.getElementById('roiPerMarketChart').getContext('2d'), roiConfig);
+        }
+
+        // --- Interaction Handlers (Unchanged) ---
 
         function switchView(view) {
             currentView = view;
@@ -471,7 +590,6 @@
 
             tabButtons.forEach(btn => {
                 const isActive = btn.dataset.tab === tab;
-                const accent = tab === 'pl' ? 'bg-accent-2' : 'bg-accent-1';
                 
                 btn.classList.toggle('bg-accent-1', tab !== 'pl' && isActive);
                 btn.classList.toggle('bg-accent-2', tab === 'pl' && isActive);
@@ -505,10 +623,10 @@
             });
             
             // 4. Initial Render
-            // Set initial state for tabs and views
             switchTab('stake');
             switchView(CHART_VIEWS.YEAR); 
-            renderSmallCharts();
+            renderEventsChart();
+            renderMarketCharts();
 
             // 5. Replace Lucide icons
             lucide.createIcons();
