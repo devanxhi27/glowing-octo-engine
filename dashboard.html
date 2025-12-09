@@ -231,7 +231,7 @@
     <script>
         // --- Global Config ---
         const CHART_VIEWS = { YEAR: 'year', MONTH: 'month', WEEK: 'week', DAY: 'day' };
-        const MARKET_GROUPS = ["Corner Handicap", "Card Handicap", "Corner O/U", "Card O/U"];
+        const MARKET_GROUPS = ["CR AH", "CA AH", "CR O/U", "CA O/U"];
         let currentView = CHART_VIEWS.YEAR;
         let currentTab = 'stake';
         let mainChartInstance = null;
@@ -555,7 +555,7 @@
             const stakeValues = MARKET_GROUPS.map(m => stakeData[m]);
             // Uses the modified getChartConfig which now returns transparent background for 'bar' charts
             const stakeConfig = getChartConfig('bar', stakeLabels, stakeValues, 'Stake', '$', 'accent-2');
-            stakeConfig.options.scales.x.ticks.callback = (val) => stakeLabels[val].split(' ')[0]; // Use only first word of label
+            stakeConfig.options.scales.x.ticks.callback = (val) => stakeLabels[val]; // Use only first word of label
             new Chart(document.getElementById('stakePerMarketChart').getContext('2d'), stakeConfig);
 
             // --- ROI per Market Chart (Bar Chart) ---
@@ -563,7 +563,7 @@
             const roiValues = MARKET_GROUPS.map(m => roiData[m]);
             // Uses the modified getChartConfig
             const roiConfig = getChartConfig('bar', roiLabels, roiValues, 'ROI', '%', 'chart-green');
-            roiConfig.options.scales.x.ticks.callback = (val) => roiLabels[val].split(' ')[0]; // Use only first word of label
+            roiConfig.options.scales.x.ticks.callback = (val) => roiLabels[val]; // Use only first word of label
             roiConfig.options.scales.y.beginAtZero = false; // ROI can be negative
             
             new Chart(document.getElementById('roiPerMarketChart').getContext('2d'), roiConfig);
