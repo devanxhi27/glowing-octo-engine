@@ -306,8 +306,8 @@
             `;
 
             profile.addEventListener("click", () => {
-                // alert("Selected: " + client.name);
-                window.location = "dashboard.html";
+                const encodedName = encodeURIComponent(client.name);
+                window.location = `dashboard.html?profile=${encodedName}`;
             });
 
             carousel.appendChild(profile);
@@ -380,8 +380,9 @@ window.addEventListener("load", () => {
                 <div class="avatar" style="background-image:url('${defaultAvatar}')"></div>
                 <div class="profile-name">${client.name}</div>
             `;
-            profile.addEventListener("click", () => {
-                window.location = "dashboard.html";
+           profile.addEventListener("click", () => {
+                const encodedName = encodeURIComponent(client.name);
+                window.location = `dashboard.html?profile=${encodedName}`;
             });
             carousel.appendChild(profile);
         });

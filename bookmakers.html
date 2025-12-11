@@ -303,9 +303,9 @@
                 <div class="profile-name">${bookmaker.name}</div>
             `;
 
-            profile.addEventListener("click", () => {
-                // alert("Selected: " + bookmaker.name);
-                window.location = "dashboard.html";
+             profile.addEventListener("click", () => {
+                const encodedName = encodeURIComponent(bookmaker.name);
+                window.location = `dashboard.html?profile=${encodedName}`;
             });
 
             carousel.appendChild(profile);
@@ -378,9 +378,10 @@
                     <div class="avatar" style="background-image:url('${defaultAvatar}')"></div>
                     <div class="profile-name">${client.name}</div>
                 `;
-                profile.addEventListener("click", () => {
-                    window.location = "dashboard.html";
-                });
+               profile.addEventListener("click", () => {
+                const encodedName = encodeURIComponent(client.name);
+                window.location = `dashboard.html?profile=${encodedName}`;
+            });
                 carousel.appendChild(profile);
             });
             updateChevrons();

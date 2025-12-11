@@ -50,6 +50,9 @@
         ::-webkit-scrollbar-thumb:hover {
             background: #3b82f6;
         }
+        #sidebar {
+            height: auto;
+        }
     </style>
     <!-- Firebase/Firestore boilerplate -->
     <script type="module">
@@ -156,7 +159,7 @@
                 <i data-lucide="menu" class="w-7 h-7"></i>
             </button>
             
-            <h1 class="text-2xl sm:text-3xl font-extrabold text-white flex-1">DASHBOARD</h1>
+            <h1 id="profileTitle" class="text-2xl sm:text-3xl font-extrabold text-white flex-1">DASHBOARD</h1>
             
             <div class="flex items-center space-x-4">
                 <button class="text-text-muted hover:text-white transition"><i data-lucide="search" class="w-5 h-5"></i></button>
@@ -184,7 +187,7 @@
                     <button data-view="year" class="view-btn px-3 py-1 rounded-full font-semibold transition-colors duration-200 bg-surface/50 text-white">Year</button>
                     <button data-view="month" class="view-btn px-3 py-1 rounded-full font-semibold transition-colors duration-200 hover:bg-surface/50 hover:text-white">Month</button>
                     <button data-view="week" class="view-btn px-3 py-1 rounded-full font-semibold transition-colors duration-200 hover:bg-surface/50 hover:text-white">Week</button>
-                    <button data-view="day" class="view-btn px-3 py-1 rounded-full font-semibold transition-colors duration-200 hover:bg-surface/50 hover:text-white">Day</button>
+                    <!-- <button data-view="day" class="view-btn px-3 py-1 rounded-full font-semibold transition-colors duration-200 hover:bg-surface/50 hover:text-white">Day</button> -->
                 </div>
             </div>
 
@@ -280,6 +283,64 @@
 
         // --- Data Generation Functions ---
 
+        /** Helper function to get the ISO week number of a date */
+        function getWeekNumber(d) {
+            // Clone date to avoid modifying original
+            d = new Date(Date.UTC(d.getFullYear(), d.getMonth(), d.getDate()));
+            // Set to Thursday of the current week (ISO 8601)
+            d.setUTCDate(d.getUTCDate() + 4 - (d.getUTCDay() || 7));
+            // January 4 is always in week 1
+            const yearStart = new Date(Date.UTC(d.getUTCFullYear(), 0, 4));
+            // Calculate full weeks elapsed
+            const weekNo = Math.ceil((((d - yearStart) / 86400000) + 1) / 7);
+            return weekNo;
+        }
+
+        /**
+         * Generates an array of week labels (e.g., "Week 32") and corresponding mock data points
+         * for the main chart, starting from Week 32 up to the current week.
+         * @param {string} metric The metric to generate data for ('stake', 'pl', or 'roi').
+         * @returns {object} An object containing 'labels' (string[]) and 'data' (number[]).
+         */
+        function generateWeeklyChartData(metric) {
+            const START_WEEK = 32;
+            const currentYear = new Date().getFullYear();
+            const currentWeek = getWeekNumber(new Date());
+
+            const labels = [];
+            const data = [];
+
+            // Loop from Week 32 up to and including the current week
+            for (let week = START_WEEK; week <= currentWeek; week++) {
+                labels.push(`W${week}`);
+                
+                // --- Generate Mock Values based on metric for visual variation ---
+                const factor = week - START_WEEK;
+                let mockValue = 0;
+
+                if (metric === 'stake') {
+                    // High values, varying with sine wave
+                    mockValue = Math.floor(65000 + 40000 * Math.sin(factor * 0.4));
+                } else if (metric === 'pl') {
+                    // Lower values, varying with cosine wave (can be negative/positive)
+                    mockValue = Math.floor(1500 + 2500 * Math.cos(factor * 0.5));
+                } else if (metric === 'roi') {
+                    // Percentage values
+                    const baseROI = 15 + 10 * Math.sin(factor * 0.3);
+                    mockValue = parseFloat(Math.max(0, baseROI).toFixed(1));
+                }
+
+                data.push(mockValue);
+            }
+
+            console.log(`Generated data from Week ${START_WEEK} to Week ${currentWeek} of ${currentYear} for metric: ${metric}`);
+            return {
+                labels: labels,
+                data: data
+            };
+        }
+
+
         /** Generates mock daily data for a full year. */
         function generateMockData() {
             const data = [];
@@ -325,12 +386,23 @@
             return { stakeData, roiData };
         }
 
-        /** Aggregates the main chart data based on the selected view. */
+ /** Aggregates the main chart data based on the selected view. */
         function aggregateData(view, metric) {
             let aggregated = {};
             let labels = [];
             let data = [];
-            let unit = (metric === 'roi') ? '%' : '$';
+            // Use € for PL, $ for Stake, % for ROI
+            let unit = (metric === 'roi') ? '%' : (metric === 'pl' ? '€' : '$'); 
+
+            if (view === CHART_VIEWS.WEEK) {
+                // *** Custom Weekly Data Generation (Week 32 -> Current Week) ***
+                const weeklyData = generateWeeklyChartData(metric);
+                return {
+                    labels: weeklyData.labels,
+                    data: weeklyData.data,
+                    unit: unit 
+                };
+            }
 
             const filterAndGroup = (item, date) => {
                 let key = '';
@@ -341,11 +413,6 @@
                     case CHART_VIEWS.MONTH:
                         if (moment().diff(date, 'days') <= 30) {
                             key = date.format('D');
-                        }
-                        break;
-                    case CHART_VIEWS.WEEK:
-                        if (moment().diff(date, 'days') <= 7) {
-                            key = date.format('ddd');
                         }
                         break;
                     case CHART_VIEWS.DAY:
@@ -381,18 +448,9 @@
 
             if (view === CHART_VIEWS.YEAR) {
                 labels = labels.map(key => moment(key, 'YYYY-MM').format('MMM'));
-            } else if (view === CHART_VIEWS.WEEK) {
-                const daysOfWeek = moment.weekdaysShort(true);
-                const sortedData = daysOfWeek.map(dayKey => {
-                    const index = labels.findIndex(l => l === dayKey);
-                    return index !== -1 ? data[index] : 0;
-                });
-                labels = daysOfWeek;
-                data = sortedData;
             } else if (view === CHART_VIEWS.DAY) {
-                // For day view, show last 24 records (if available)
-                labels = chartData.slice(-24).map(d => moment(d.date).format('MM/DD'));
-                data = chartData.slice(-24).map(d => d[metric]);
+                 labels = chartData.slice(-24).map(d => moment(d.date).format('MM/DD'));
+                 data = chartData.slice(-24).map(d => d[metric]);
             }
 
             return { labels, data, unit };
@@ -579,6 +637,12 @@
 
         /** Application startup function. */
         async function initializeApp() {
+            const params = new URLSearchParams(window.location.search);
+            const profile = params.get("profile");
+
+            console.log("Profile:", profile);
+            document.getElementById("profileTitle").innerText = profile;
+
             // 1. Initialize Firebase (optional/boilerplate)
             await window.initFirebase();
 
