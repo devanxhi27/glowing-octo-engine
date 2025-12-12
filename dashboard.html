@@ -307,6 +307,15 @@
     const totalEventsCountEl = document.getElementById('total-events-count');
     const viewButtons = document.querySelectorAll('#view-selector .view-btn');
     const tabButtons = document.querySelectorAll('#main-tabs .tab-btn');
+    
+    // --- ALERT FUNCTION ---
+    /** * Shows a popup alerting the user that the dashboard is using mock data.
+     * NOTE: This uses alert(). Replace this with a proper modal/toast implementation 
+     * for a better user experience.
+     */
+    function showMockDataAlert() {
+        alert("🚨 WARNING: No data was found for this profile, or the API call failed. Displaying mock (dummy) data instead.");
+    }
 
     // --- DATA FETCHING & MOCK FALLBACK FUNCTIONS ---
 
@@ -324,7 +333,7 @@
         let currentDay = startDate.clone();
         while (currentDay.isBefore(endDate)) {
             const dayString = currentDay.format('YYYY-MM-DD');
-            const weekString = `Week ${currentDay.isoWeek()} ${currentDay.isoWeekYear()}`; // Mocking the week format
+            const weekString = `Week ${currentDay.isoWeek()} ${currentDay.isoWeekYear()}`;
 
             const baseStake = Math.floor(Math.random() * 20000 + 50000);
             const dailyPL = Math.floor(Math.random() * 2000 - 500);
@@ -337,7 +346,7 @@
                 pl: dailyPL,
                 roi: Math.max(-5, parseFloat(dailyROI.toFixed(2))),
                 events: Math.floor(Math.random() * 15 + 5),
-                week: weekString // Added mock week data
+                week: weekString
             });
             currentDay.add(1, 'day');
         }
@@ -345,7 +354,9 @@
     }
 
     /**
-     * Fetches real daily analytics data from the API endpoint using a robust fetch configuration.
+     * Fetches real daily analytics data from the API endpoint.
+     * Returns the data, or null if mock data was generated due to error/empty response.
+     * @param {string} profileId - The profile identifier from the URL parameter.
      */
     async function fetchDailyAnalytics(profileId) {
         
@@ -359,6 +370,9 @@
                 "Accept": "application/json" 
             }
         };
+        
+        let data = [];
+        let isMock = false;
 
         try {
             console.log(`Attempting to fetch data from: ${apiEndpoint}`);
@@ -366,19 +380,31 @@
             const response = await fetch(apiEndpoint, requestOptions);
             
             if (!response.ok) {
-                throw new Error(`HTTP error! Status: ${response.status} - Response not OK. Ensure API is running and accessible.`);
+                // If HTTP status is not 2xx, throw error to catch block
+                throw new Error(`HTTP error! Status: ${response.status}`);
             }
 
-            const data = await response.json();
-            console.log("Data successfully loaded from API.");
-            return data;
+            data = await response.json();
+            
+            // --- NEW: Check for empty array ---
+            if (!data || data.length === 0) {
+                console.warn("API returned an empty data set. Generating mock data.");
+                data = generateMockData();
+                isMock = true;
+            } else {
+                console.log("Data successfully loaded from API.");
+            }
+            // --- END NEW CHECK ---
             
         } catch (error) {
             console.error("Critical Fetch Error:", error.message);
-            console.warn("If the error is 'Failed to fetch' or 'CORS policy', you must configure your backend server (or ngrok) to allow requests from the domain where this dashboard is hosted.");
-            console.log("Falling back to mock data...");
-            return generateMockData();
+            console.warn("Falling back to mock data due to API error.");
+            data = generateMockData();
+            isMock = true;
         }
+
+        // Return the data object along with the mock flag
+        return { data: data, isMock: isMock };
     }
 
 
@@ -402,31 +428,23 @@
         let data = [];
         let unit = (metric === 'roi') ? '%' : (metric === 'pl' ? '€' : '$'); 
 
-        // --- START OF WEEK FIX ---
         if (view === CHART_VIEWS.WEEK) {
             const weeklyAggregated = {};
 
             chartData.forEach(item => {
-                // IMPORTANT: Use the 'week' property directly from the API object
                 const key = item.week; 
-
-                // Ensure the item has the 'week' property before processing
                 if (!key) return; 
 
                 weeklyAggregated[key] = (weeklyAggregated[key] || { sum: 0, count: 0, totalStake: 0 });
 
                 if (metric === 'roi') {
-                    // Accumulate daily ROI values for average calculation
                     weeklyAggregated[key].sum += item[metric];
                     weeklyAggregated[key].count += 1;
                 } else { 
-                    // Accumulate daily Stake/PL values for sum calculation
                     weeklyAggregated[key].sum += item[metric];
                 }
             });
 
-            // The keys are strings like "Week 32 2025". We need custom sorting.
-            // Sort by Year (last 4 chars) then Week Number (after "Week ")
             const orderedKeys = Object.keys(weeklyAggregated).sort((a, b) => {
                 const yearA = parseInt(a.substring(a.length - 4));
                 const weekA = parseInt(a.substring(5, a.indexOf(' ', 5)));
@@ -441,22 +459,17 @@
             data = orderedKeys.map(key => {
                 const item = weeklyAggregated[key];
                 if (metric === 'roi') {
-                    // Calculate average daily ROI for the week
                     return parseFloat((item.sum / item.count).toFixed(2));
                 }
                 return item.sum;
             });
             
-            // Format labels to just show "Wk 32"
             labels = orderedKeys.map(key => {
                  const weekNum = key.substring(5, key.indexOf(' ', 5));
                  return `Wk ${weekNum}`;
             });
         
-        // --- END OF WEEK FIX ---
-
         } else {
-            // Logic for YEAR (Monthly Aggregation) and MONTH (Daily Aggregation)
             
             const filterAndGroup = (item, date) => {
                 let key = '';
@@ -505,7 +518,7 @@
         return { labels, data, unit };
     }
 
-    // --- Chart Configuration Templates (unchanged) ---
+    // --- Chart Configuration Templates (omitted for brevity) ---
 
     function getChartConfig(type, labels, data, metric, unit, colorKey) {
         const isLine = type === 'line';
@@ -591,7 +604,7 @@
         };
     }
 
-    // --- Chart Rendering Functions (unchanged logic) ---
+    // --- Chart Rendering Functions (omitted for brevity) ---
 
     function renderMainChart() {
         const canvas = document.getElementById('mainChart');
@@ -620,13 +633,11 @@
         
         const weeklyEvents = {};
         latestData.forEach(item => {
-            // Use the week property from the item
             const weekKey = item.week; 
             if (!weekKey) return; 
             weeklyEvents[weekKey] = (weeklyEvents[weekKey] || 0) + item.events;
         });
         
-        // Use the same custom sorting as in aggregateData
         const orderedKeys = Object.keys(weeklyEvents).sort((a, b) => {
             const yearA = parseInt(a.substring(a.length - 4));
             const weekA = parseInt(a.substring(5, a.indexOf(' ', 5)));
@@ -668,7 +679,7 @@
         new Chart(document.getElementById('roiPerMarketChart').getContext('2d'), roiConfig);
     }
 
-    // --- Interaction Handlers (unchanged) ---
+    // --- Interaction Handlers (omitted for brevity) ---
 
     function switchView(view) {
         currentView = view;
@@ -720,7 +731,15 @@
 
         await window.initFirebase();
 
-        chartData = await fetchDailyAnalytics(profile);
+        // 2. Load Data and check if it's mock data
+        const result = await fetchDailyAnalytics(profile);
+        chartData = result.data;
+        
+        // --- NEW: Display alert if mock data was generated ---
+        if (result.isMock) {
+            showMockDataAlert();
+        }
+        // --- END NEW CHECK ---
 
         const totalEvents = chartData.reduce((sum, item) => sum + item.events, 0);
         totalEventsCountEl.textContent = totalEvents.toLocaleString();
