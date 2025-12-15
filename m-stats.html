@@ -63,8 +63,8 @@
             height: auto;
         }
 
-        /* Ensure the polar chart container allows for center positioning */
-        .polar-chart-container {
+        /* Ensure the chart container has a defined height */
+        .chart-container-lg {
             position: relative;
             height: 400px;
             display: flex;
@@ -201,11 +201,11 @@
                 <h2 class="text-lg font-semibold text-text-light mb-4">Market Group Performance Analysis (Stake vs. P/L)</h2>
                 <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
                     
-                    <div class="polar-chart-container">
+                    <div class="chart-container-lg">
                         <canvas id="marketGroupStakeChart" class="max-w-full max-h-full"></canvas>
                     </div>
 
-                    <div class="polar-chart-container">
+                    <div class="chart-container-lg">
                         <canvas id="marketGroupPLChart" class="max-w-full max-h-full"></canvas>
                     </div>
 
@@ -297,18 +297,19 @@
         // ======================================================================
         /**
          * Generates mock data for the market group ROI and Stake (polar area charts).
+         * NOTE: ROI values are used to calculate the P/L values.
          */
         function generateMarketGroupMockData() {
              return [
-                { "marketGroup": "Cards Over/Under", "roi": 15.5, "totalStake": 4411219.61 },
-                { "marketGroup": "Handicap Corners", "roi": 2.1, "totalStake": 3863167.07 },
-                { "marketGroup": "Corners Over/Under", "roi": -5.3, "totalStake": 3778123.42 },
-                { "marketGroup": "Handicap Cards", "roi": 8.0, "totalStake": 1340407.02 },
-                { "marketGroup": "Team Corners O/U", "roi": -1.8, "totalStake": 844932.26 },
-                { "marketGroup": "Team Cards O/U", "roi": 25.0, "totalStake": 670089.34 },
-                { "marketGroup": "Handicaps", "roi": 5.9, "totalStake": 316207.00 },
-                { "marketGroup": "Other Betting Options", "roi": 12.5, "totalStake": 133572.60 },
-                { "marketGroup": "Combination Markets", "roi": 40.0, "totalStake": 4750.00 },
+                { "marketGroup": "Cards Over/Under", "roi": 15.5, "totalStake": 4411219.61 }, // PL ~ 683K
+                { "marketGroup": "Handicap Corners", "roi": 2.1, "totalStake": 3863167.07 }, // PL ~ 81K
+                { "marketGroup": "Corners Over/Under", "roi": -5.3, "totalStake": 3778123.42 }, // PL ~ -200K
+                { "marketGroup": "Handicap Cards", "roi": 8.0, "totalStake": 1340407.02 }, // PL ~ 107K
+                { "marketGroup": "Team Corners O/U", "roi": -1.8, "totalStake": 844932.26 }, // PL ~ -15K
+                { "marketGroup": "Team Cards O/U", "roi": 25.0, "totalStake": 670089.34 }, // PL ~ 167K
+                { "marketGroup": "Handicaps", "roi": 5.9, "totalStake": 316207.00 }, // PL ~ 18K
+                { "marketGroup": "Other Betting Options", "roi": 12.5, "totalStake": 133572.60 }, // PL ~ 16K
+                { "marketGroup": "Combination Markets", "roi": 40.0, "totalStake": 4750.00 }, // PL ~ 1.9K
             ];
         }
 
@@ -551,10 +552,10 @@
 
 
         // ======================================================================
-        // === DUAL POLAR CHART FUNCTION: MARKET GROUP STAKE & PL (UPDATED) ===
+        // === DUAL CHARTS: MARKET GROUP STAKE (Polar) & PL (Horizontal Bar) ===
         // ======================================================================
         /**
-         * Renders two side-by-side Polar Area charts for Market Group Stake and P/L.
+         * Renders two side-by-side charts for Market Group Stake (Polar) and P/L (Bar).
          */
         function createDualMarketGroupCharts(data) {
             const rawData = data.data;
@@ -564,7 +565,7 @@
             const stakes = rawData.map(item => item.totalStake);
             const rois = rawData.map(item => item.roi);
             
-            // Calculate Profit/Loss (PL) for each market group
+            // Calculate Profit/Loss (PL) for each market group (SIGNED VALUE)
             const pls = rawData.map(item => (item.totalStake * item.roi / 100));
             
             const colorPalette = [
@@ -588,7 +589,7 @@
                 return `${sign}${absValue.toFixed(2)}`;
             };
 
-            // --- 1. STAKE CHART CONFIGURATION ---
+            // --- 1. STAKE CHART CONFIGURATION (Polar Area - Unchanged) ---
             const stakeCtx = document.getElementById('marketGroupStakeChart').getContext('2d');
             const stakeChartData = {
                 labels: labels,
@@ -601,21 +602,8 @@
                 }],
             };
             
-            // --- 2. PL CHART CONFIGURATION (UPDATED) ---
-            const plCtx = document.getElementById('marketGroupPLChart').getContext('2d');
-            const plChartData = {
-                labels: labels,
-                datasets: [{
-                    label: 'P/L',
-                    data: pls.map(Math.abs), // Use absolute PL for magnitude
-                    backgroundColor: backgroundColors.map(color => color + 'b3'), 
-                    borderColor: colors['surface'], 
-                    borderWidth: 2
-                }],
-            };
-
-            // Common options for both charts
-            const commonOptions = {
+            // Common options for Polar Area
+            const polarCommonOptions = {
                 responsive: true,
                 maintainAspectRatio: false,
                 scale: {
@@ -656,18 +644,77 @@
                     }
                 }
             };
+
+            // --- 2. P/L CHART CONFIGURATION (Horizontal Bar - NEW) ---
+            const plCtx = document.getElementById('marketGroupPLChart').getContext('2d');
+            const plBackgroundColors = pls.map(pl => pl >= 0 ? colors['chart-green'] : colors['chart-red']);
+            const plChartData = {
+                labels: labels,
+                datasets: [{
+                    label: 'Profit/Loss',
+                    data: pls, // Use the signed PL data
+                    backgroundColor: plBackgroundColors, 
+                    borderColor: plBackgroundColors.map(c => c + 'aa'), // Slightly darker border
+                    borderWidth: 1
+                }],
+            };
+
+            // Options for Horizontal Bar Chart
+            const barCommonOptions = {
+                indexAxis: 'y', // Make it horizontal
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: {
+                        display: false // Hide the legend for simplicity
+                    },
+                    title: { 
+                        display: true, 
+                        text: 'P/L per Market Group', 
+                        font: { size: 16, weight: 'bold' }, 
+                        color: colors['text-light'] 
+                    },
+                    tooltip: {
+                        backgroundColor: colors['surface'],
+                        titleColor: colors['text-light'],
+                        bodyColor: colors['text-light'],
+                        borderColor: colors['accent-1'],
+                        borderWidth: 1,
+                        callbacks: {
+                            label: function(context) {
+                                const marketGroup = context.label;
+                                const pl = pls[context.dataIndex];
+                                const roi = rois[context.dataIndex];
+                                return `${marketGroup} P/L: ${formatValue(pl, 'PL')} | ROI: ${formatValue(roi, 'ROI')}`;
+                            }
+                        }
+                    }
+                },
+                scales: {
+                    x: {
+                        position: 'bottom',
+                        grid: { color: colors['text-muted'] + '22' },
+                        ticks: { color: colors['text-muted'], callback: function(value) { return formatValue(value, 'PL'); } },
+                        title: { display: true, text: 'Profit / Loss', color: colors['text-light'] }
+                    },
+                    y: {
+                        grid: { display: false },
+                        ticks: { color: colors['text-light'] }
+                    }
+                }
+            };
             
             // Create the charts
             new Chart(stakeCtx, {
                 type: 'polarArea',
                 data: stakeChartData,
-                options: { ...commonOptions, plugins: { ...commonOptions.plugins, title: { display: true, text: 'Stake per Market Group', color: colors['text-light'] } } },
+                options: { ...polarCommonOptions, plugins: { ...polarCommonOptions.plugins, title: { display: true, text: 'Stake per Market Group', color: colors['text-light'] } } },
             });
 
             new Chart(plCtx, {
-                type: 'polarArea',
+                type: 'bar', // Change type to 'bar'
                 data: plChartData,
-                options: { ...commonOptions, plugins: { ...commonOptions.plugins, title: { display: true, text: 'P/L per Market Group', color: colors['text-light'] } } },
+                options: barCommonOptions,
             });
         }
 
