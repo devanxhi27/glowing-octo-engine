@@ -1,0 +1,291 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Market Stats | Dashboard</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/moment@2.29.4/moment.min.js"></script>
+    <script src="https://unpkg.com/lucide@latest"></script>
+
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        'background': '#0d0d21',   // Very deep, dark blue/black
+                        'surface': '#1a1a36',       // Darker card background
+                        'accent-1': '#00ffff',      // NEON CYAN/BLUE (Primary accent)
+                        'accent-2': '#ff00aa',      // NEON PINK/MAGENTA (Secondary/Alert accent)
+                        'sidebar-start': '#0d0d21', // Matches background for smooth sidebar start
+                        'sidebar-end': '#4d0099',   // Deep Violet/Purple for gradient end
+                        'text-light': '#f0f8ff',    // Crisp white/azure
+                        'text-muted': '#8b8c9d',    // Muted gray for secondary text
+                        'chart-green': '#39ff14',   // NEON LIME GREEN (Success/ROI)
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+        }
+
+        /* Custom scrollbar for dark theme */
+        ::-webkit-scrollbar {
+            width: 8px;
+        }
+
+        ::-webkit-scrollbar-track {
+            background: #1e274a;
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background: #4c1d95;
+            border-radius: 4px;
+        }
+
+        ::-webkit-scrollbar-thumb:hover {
+            background: #3b82f6;
+        }
+
+        #sidebar {
+            height: auto;
+        }
+    </style>
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
+        import { getAuth, signInAnonymously, signInWithCustomToken } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+        import { getFirestore, setLogLevel } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+
+        const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
+        const firebaseConfig = typeof __firebase_config !== 'undefined' ? JSON.parse(__firebase_config) : null;
+        const initialAuthToken = typeof __initial_auth_token !== 'undefined' ? __initial_auth_token : null;
+
+        window.db = null;
+        window.auth = null;
+
+        async function initFirebase() {
+            if (!firebaseConfig) {
+                console.warn("Firebase config not found. Running in mock data mode.");
+                return;
+            }
+            try {
+                setLogLevel('error');
+                const app = initializeApp(firebaseConfig);
+                window.db = getFirestore(app);
+                window.auth = getAuth(app);
+
+                if (initialAuthToken) {
+                    await signInWithCustomToken(window.auth, initialAuthToken);
+                } else {
+                    await signInAnonymously(window.auth);
+                }
+                // console.log("Firebase initialized and authenticated.");
+            } catch (error) {
+                console.error("Firebase initialization or sign-in failed:", error);
+            }
+        }
+        window.initFirebase = initFirebase;
+    </script>
+</head>
+
+<body class="bg-background text-text-light flex min-h-screen relative">
+
+    <div id="sidebar-overlay"
+        class="fixed inset-0 bg-background bg-opacity-70 z-40 hidden md:hidden transition-opacity duration-300"
+        onclick="toggleSidebar()"></div>
+
+    <div id="sidebar" class="fixed inset-y-0 left-0 z-50 w-64 bg-sidebar-start bg-gradient-to-br from-sidebar-start to-sidebar-end text-white shadow-2xl p-4 
+        transform -translate-x-full md:translate-x-0 transition-transform duration-300 
+        md:static md:flex md:flex-col md:h-screen">
+
+        <a href="clients.html">
+            <div class="flex items-center space-x-3 mb-8 p-2">
+                <div class="p-2 rounded-full bg-white bg-opacity-20">
+                    <i data-lucide="zap" class="w-6 h-6 text-accent-1"></i>
+                </div>
+                <h2 class="text-xl font-bold tracking-wider">DASHBOARD</h2>
+            </div>
+        </a>
+
+        <nav class="space-y-2 flex-grow">
+            <a href="dashboard.html"
+                class="sidebar-link flex items-center space-x-3 p-3 rounded-xl transition duration-200 hover:bg-white hover:bg-opacity-10">
+                <i data-lucide="layout-dashboard" class="w-5 h-5"></i>
+                <span>Dashboard</span>
+            </a>
+            <a href="monthly-stats.html"
+                class="sidebar-link flex items-center space-x-3 p-3 rounded-xl transition duration-200 hover:bg-white hover:bg-opacity-10">
+                <i data-lucide="calendar" class="w-5 h-5"></i>
+                <span>Monthly Stats</span>
+            </a>
+            <a href="league-stats.html"
+                class="sidebar-link flex items-center space-x-3 p-3 rounded-xl transition duration-200 hover:bg-white hover:bg-opacity-10">
+                <i data-lucide="trophy" class="w-5 h-5"></i>
+                <span>League Stats</span>
+            </a>
+           <a href="m-stats.html?profile=" data-page="market-stats"
+                class="sidebar-link flex items-center space-x-3 p-3 rounded-xl bg-white bg-opacity-10 font-semibold transition duration-200 hover:bg-opacity-20">
+                <i data-lucide="trending-up" class="w-5 h-5"></i>
+                <span>Market Stats</span>
+            </a>
+            <a href="bookmaker-stats.html"
+                class="sidebar-link flex items-center space-x-3 p-3 rounded-xl transition duration-200 hover:bg-white hover:bg-opacity-10">
+                <i data-lucide="banknote" class="w-5 h-5"></i>
+                <span>Bookmaker Stats</span>
+            </a>
+            <a href="event-stats.html"
+                class="sidebar-link flex items-center space-x-3 p-3 rounded-xl transition duration-200 hover:bg-white hover:bg-opacity-10">
+                <i data-lucide="calendar-check" class="w-5 h-5"></i>
+                <span>Event Stats</span>
+            </a>
+            <a href="complex-analysis.html"
+                class="sidebar-link flex items-center space-x-3 p-3 rounded-xl transition duration-200 hover:bg-white hover:bg-opacity-10">
+                <i data-lucide="sigma" class="w-5 h-5"></i>
+                <span>Complex Analysis</span>
+            </a>
+        </nav>
+
+        <div class="mt-auto pt-4 border-t border-white border-opacity-10">
+            <a href="#"
+                class="flex items-center justify-center p-3 rounded-xl text-xs font-bold uppercase tracking-wider text-text-light bg-accent-2 hover:bg-accent-1/90 transition duration-200">
+                <i data-lucide="rocket" class="w-4 h-4 mr-2"></i>
+                CREATE PDF
+            </a>
+        </div>
+    </div>
+
+    <div class="flex-1 p-4 md:p-8 overflow-auto">
+        <header class="flex justify-between items-center mb-6">
+            <button id="menu-toggle" class="md:hidden text-text-light hover:text-accent-1 transition mr-4">
+                <i data-lucide="menu" class="w-7 h-7"></i>
+            </button>
+
+            <h3 id="profileTitle" class="text-xl sm:text-2xl font-bold tracking-wider text-accent-1 flex-1">MARKET GROUP STATISTICS</h3>
+
+            <div class="flex items-center space-x-4">
+                <button class="text-text-muted hover:text-white transition"><i data-lucide="search"
+                        class="w-5 h-5"></i></button>
+                <button class="text-text-muted hover:text-white transition"><i data-lucide="settings"
+                        class="w-5 h-5"></i></button>
+                <div class="w-8 h-8 rounded-full bg-gray-500"></div>
+            </div>
+        </header>
+
+        <main class="space-y-6">
+            <div class="bg-surface rounded-xl shadow-2xl p-6 border border-accent-1/20">
+                <h2 class="text-lg font-semibold text-text-light mb-2">Market Performance Overview</h2>
+                <p class="text-text-muted">Content for market performance trends (Stake, PL, ROI by Market) will go here.</p>
+                </div>
+            
+            <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                <div class="lg:col-span-1 bg-surface rounded-xl p-6 shadow-xl border border-surface/50">
+                    <h3 class="text-md font-semibold text-text-light">Group 1 Breakdown</h3>
+                    <p class="text-text-muted text-sm">Comparison charts (ROI/Stake) for specific market types.</p>
+                </div>
+                 <div class="lg:col-span-1 bg-surface rounded-xl p-6 shadow-xl border border-surface/50">
+                    <h3 class="text-md font-semibold text-text-light">Group 2 Breakdown</h3>
+                    <p class="text-text-muted text-sm">Table or list of the top performing markets.</p>
+                </div>
+                 <div class="lg:col-span-1 bg-surface rounded-xl p-6 shadow-xl border border-surface/50">
+                    <h3 class="text-md font-semibold text-text-light">Group 3 Breakdown</h3>
+                    <p class="text-text-muted text-sm">Market volatility or consistency metrics.</p>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <script>
+        // --- Sidebar Toggling Logic for Mobile ---
+        function toggleSidebar() {
+            const sidebar = document.getElementById('sidebar');
+            const overlay = document.getElementById('sidebar-overlay');
+            const isHidden = sidebar.classList.contains('-translate-x-full');
+
+            if (isHidden) {
+                sidebar.classList.remove('-translate-x-full');
+                sidebar.classList.add('translate-x-0');
+                overlay.classList.remove('hidden');
+                document.body.style.overflow = 'hidden';
+            } else {
+                sidebar.classList.add('-translate-x-full');
+                sidebar.classList.remove('translate-x-0');
+                overlay.classList.add('hidden');
+                document.body.style.overflow = 'auto';
+            }
+        }
+
+        // Add this line globally to store the profile once it's read
+        window.currentProfile = "User"; // Default fallback
+
+        // Function to update the HREFs of all sidebar links
+        function updateSidebarLinks(profile) {
+            if (!profile) return; // Stop if no profile is found
+
+            // Find all anchor tags within the sidebar nav
+            const links = document.querySelectorAll('#sidebar nav a');
+
+            links.forEach(link => {
+                let originalHref = link.getAttribute('href');
+
+                // Check if the href is a local file (e.g., dashboard.html) and not a full URL or '#'
+                if (originalHref && originalHref.endsWith('.html')) {
+                    // Remove any existing query string before adding the new one
+                    const cleanHref = originalHref.split('?')[0];
+                    
+                    // Reconstruct the URL with the encoded profile
+                    link.setAttribute('href', `${cleanHref}?profile=${encodeURIComponent(profile)}`);
+                } 
+                
+                // Handle the active Market Stats link separately, if needed, 
+                // to ensure it loads with the profile context if the user refreshes.
+                if (link.dataset.page === 'market-stats') {
+                    // For the currently active page, we can also ensure the URL has the profile
+                    link.setAttribute('href', `m-stats.html?profile=${encodeURIComponent(profile)}`);
+                }
+            });
+        }
+
+        /** Application startup function. */
+        async function initializeApp() {
+            // Update the main title dynamically
+            const params = new URLSearchParams(window.location.search);
+            const profile = params.get("profile") || "User";
+
+            updateSidebarLinks(profile);
+
+            // If you wanted to show the profile name: 
+            document.getElementById("profileTitle").innerText = `${profile}'s Market Stats`;
+            
+            // Initialize Lucide icons
+            lucide.createIcons();
+
+            await window.initFirebase(); 
+            // NOTE: Data fetching logic (fetchDailyAnalytics, generateMockData, etc.) 
+            // from the previous script is NOT included here, as this file is meant 
+            // for the Market Stats page and should have its own data functions.
+
+            // Set up Event Listeners
+            document.getElementById('menu-toggle').addEventListener('click', toggleSidebar);
+
+            // Close sidebar on link click (for mobile)
+            document.querySelectorAll('.sidebar-link').forEach(link => {
+                link.addEventListener('click', () => {
+                    if (window.innerWidth < 768) {
+                        toggleSidebar();
+                    }
+                });
+            });
+            
+            console.log("Market Stats page initialized.");
+        }
+
+        // Initialize the app when the DOM is ready
+        document.addEventListener('DOMContentLoaded', initializeApp);
+    </script>
+</body>
+</html>

@@ -136,7 +136,7 @@
                 <i data-lucide="trophy" class="w-5 h-5"></i>
                 <span>League Stats</span>
             </a>
-            <a href="#"
+            <a href="m-stats.html?profile=" data-page="market-stats"
                 class="sidebar-link flex items-center space-x-3 p-3 rounded-xl transition duration-200 hover:bg-white hover:bg-opacity-10">
                 <i data-lucide="trending-up" class="w-5 h-5"></i>
                 <span>Market Stats</span>
@@ -722,6 +722,38 @@
     }
 
 
+        // Add this line globally to store the profile once it's read
+        window.currentProfile = "User"; // Default fallback
+
+        // Function to update the HREFs of all sidebar links
+        function updateSidebarLinks(profile) {
+            if (!profile) return; // Stop if no profile is found
+
+            // Find all anchor tags within the sidebar nav
+            const links = document.querySelectorAll('#sidebar nav a');
+
+            links.forEach(link => {
+                let originalHref = link.getAttribute('href');
+
+                // Check if the href is a local file (e.g., dashboard.html) and not a full URL or '#'
+                if (originalHref && originalHref.endsWith('.html')) {
+                    // Remove any existing query string before adding the new one
+                    const cleanHref = originalHref.split('?')[0];
+                    
+                    // Reconstruct the URL with the encoded profile
+                    link.setAttribute('href', `${cleanHref}?profile=${encodeURIComponent(profile)}`);
+                } 
+                
+                // Handle the active Market Stats link separately, if needed, 
+                // to ensure it loads with the profile context if the user refreshes.
+                if (link.dataset.page === 'market-stats') {
+                    // For the currently active page, we can also ensure the URL has the profile
+                    link.setAttribute('href', `m-stats.html?profile=${encodeURIComponent(profile)}`);
+                }
+            });
+        }
+
+
     /** Application startup function. */
     async function initializeApp() {
         const params = new URLSearchParams(window.location.search);
@@ -730,6 +762,8 @@
         document.getElementById("profileTitle").innerText = profile + " Analytics & Stats";
 
         await window.initFirebase();
+
+        updateSidebarLinks(profile);
 
         // 2. Load Data and check if it's mock data
         const result = await fetchDailyAnalytics(profile);
