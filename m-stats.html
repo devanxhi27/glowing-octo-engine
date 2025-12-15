@@ -15,15 +15,22 @@
             theme: {
                 extend: {
                     colors: {
-                        'background': '#0d0d21',   // Very deep, dark blue/black
-                        'surface': '#1a1a36',       // Darker card background
-                        'accent-1': '#00ffff',      // NEON CYAN/BLUE (Primary accent)
-                        'accent-2': '#ff00aa',      // NEON PINK/MAGENTA (Secondary/Alert accent)
+                        'background': '#0d0d21', // Very deep, dark blue/black
+                        'surface': '#1a1a36', // Darker card background
+                        'accent-1': '#00ffff', // NEON CYAN/BLUE (Primary accent)
+                        'accent-2': '#ff00aa', // NEON PINK/MAGENTA (Secondary/Alert accent)
                         'sidebar-start': '#0d0d21', // Matches background for smooth sidebar start
-                        'sidebar-end': '#4d0099',   // Deep Violet/Purple for gradient end
-                        'text-light': '#f0f8ff',    // Crisp white/azure
-                        'text-muted': '#8b8c9d',    // Muted gray for secondary text
-                        'chart-green': '#39ff14',   // NEON LIME GREEN (Success/ROI)
+                        'sidebar-end': '#4d0099', // Deep Violet/Purple for gradient end
+                        'text-light': '#f0f8ff', // Crisp white/azure
+                        'text-muted': '#8b8c9d', // Muted gray for secondary text
+                        'chart-green': '#39ff14', // NEON LIME GREEN (Success/ROI/PL)
+                        // === NEW COLORS ADDED FOR POLAR CHART ===
+                        'chart-red': '#ff4d4d',    // Vivid Red for Loss
+                        'chart-blue': '#4d4dff',   // Vivid Blue
+                        'chart-yellow': '#ffff4d', // Vivid Yellow
+                        'chart-purple': '#a020f0', // Purple
+                        'chart-orange': '#ffa500', // Orange
+                        // =======================================
                     }
                 }
             }
@@ -54,6 +61,15 @@
 
         #sidebar {
             height: auto;
+        }
+
+        /* Ensure the polar chart container allows for center positioning */
+        .polar-chart-container {
+            position: relative;
+            height: 400px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
         }
     </style>
     <script type="module">
@@ -180,6 +196,21 @@
         </header>
 
         <main class="space-y-6">
+            
+            <div class="bg-surface rounded-xl shadow-2xl p-6 border border-accent-1/20">
+                <h2 class="text-lg font-semibold text-text-light mb-4">Market Group Performance Analysis (Stake vs. P/L)</h2>
+                <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
+                    
+                    <div class="polar-chart-container">
+                        <canvas id="marketGroupStakeChart" class="max-w-full max-h-full"></canvas>
+                    </div>
+
+                    <div class="polar-chart-container">
+                        <canvas id="marketGroupPLChart" class="max-w-full max-h-full"></canvas>
+                    </div>
+
+                </div>
+            </div>
             <div class="bg-surface rounded-xl shadow-2xl p-6 border border-accent-1/20">
                 <h2 class="text-lg font-semibold text-text-light mb-4">Win/Loss/Void Count by League on Corners Over/Under</h2>
                 <div class="relative h-96">
@@ -193,31 +224,11 @@
                     <canvas id="leagueCardsStatsChart"></canvas>
                 </div>
             </div>
-
-            <!-- <div class="bg-surface rounded-xl shadow-2xl p-6 border border-accent-1/20">
-                <h2 class="text-lg font-semibold text-text-light mb-2">Market Performance Overview</h2>
-                <p class="text-text-muted">Content for market performance trends (Stake, PL, ROI by Market) will go here.</p>
-            </div>
-            
-            <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
-                <div class="lg:col-span-1 bg-surface rounded-xl p-6 shadow-xl border border-surface/50">
-                    <h3 class="text-md font-semibold text-text-light">Group 1 Breakdown</h3>
-                    <p class="text-text-muted text-sm">Comparison charts (ROI/Stake) for specific market types.</p>
-                </div>
-                <div class="lg:col-span-1 bg-surface rounded-xl p-6 shadow-xl border border-surface/50">
-                    <h3 class="text-md font-semibold text-text-light">Group 2 Breakdown</h3>
-                    <p class="text-text-muted text-sm">Table or list of the top performing markets.</p>
-                </div>
-                <div class="lg:col-span-1 bg-surface rounded-xl p-6 shadow-xl border border-surface/50">
-                    <h3 class="text-md font-semibold text-text-light">Group 3 Breakdown</h3>
-                    <p class="text-text-muted text-sm">Market volatility or consistency metrics.</p>
-                </div>
-            </div> -->
         </main>
     </div>
 
     <script>
-        // --- Sidebar Toggling Logic for Mobile ---
+        // --- Sidebar Toggling Logic for Mobile (Unchanged) ---
         function toggleSidebar() {
             const sidebar = document.getElementById('sidebar');
             const overlay = document.getElementById('sidebar-overlay');
@@ -236,10 +247,8 @@
             }
         }
 
-        // Add this line globally to store the profile once it's read
-        window.currentProfile = "User"; // Default fallback
+        window.currentProfile = "User"; 
 
-        // Function to update the HREFs of all sidebar links
         function updateSidebarLinks(profile) {
             if (!profile) return; 
 
@@ -258,7 +267,7 @@
         // --- Chart Data & Logic ---
 
         /**
-         * Generates mock data for the league stats chart.
+         * Generates mock data for the league stats chart (bar chart).
          */
         function generateMockData() {
             const leagues = ["EPL", "La Liga", "Bundesliga", "Serie A", "Ligue 1", "MLS", "Brasileirão", "A-League"];
@@ -283,22 +292,36 @@
             return data;
         }
 
-        // NOTE: The function processLeagueData is no longer needed since the API now returns the final structure.
-        // It has been removed for simplicity.
+        // ======================================================================
+        // === MARKET GROUP MOCK DATA ===
+        // ======================================================================
+        /**
+         * Generates mock data for the market group ROI and Stake (polar area charts).
+         */
+        function generateMarketGroupMockData() {
+             return [
+                { "marketGroup": "Cards Over/Under", "roi": 15.5, "totalStake": 4411219.61 },
+                { "marketGroup": "Handicap Corners", "roi": 2.1, "totalStake": 3863167.07 },
+                { "marketGroup": "Corners Over/Under", "roi": -5.3, "totalStake": 3778123.42 },
+                { "marketGroup": "Handicap Cards", "roi": 8.0, "totalStake": 1340407.02 },
+                { "marketGroup": "Team Corners O/U", "roi": -1.8, "totalStake": 844932.26 },
+                { "marketGroup": "Team Cards O/U", "roi": 25.0, "totalStake": 670089.34 },
+                { "marketGroup": "Handicaps", "roi": 5.9, "totalStake": 316207.00 },
+                { "marketGroup": "Other Betting Options", "roi": 12.5, "totalStake": 133572.60 },
+                { "marketGroup": "Combination Markets", "roi": 40.0, "totalStake": 4750.00 },
+            ];
+        }
 
 
         // ======================================================================
-        // API FETCH FUNCTIONS
+        // API FETCH FUNCTIONS (Unchanged from previous versions)
         // ======================================================================
 
         /**
          * Fetches league stats for CORNERS from the API endpoint and handles error/mock fallback.
-         * @param {string} profileId - The user profile ID.
-         * @returns {Promise<{data: Object, isMock: boolean}>} The processed chart data and a flag.
          */
         async function fetchCornersStats(profileId) {
             const encodedProfileId = encodeURIComponent(profileId);
-            // CORNERS API ENDPOINT
             const apiEndpoint = `https://4751210766c8.ngrok-free.app/corners-ou-winlose?client1=${encodedProfileId}`; 
 
             const requestOptions = {
@@ -324,7 +347,7 @@
                 rawData = await response.json();
                 
                 if (Array.isArray(rawData) && rawData.length === 1) {
-                    finalData = rawData[0]; // Extract the single object from the array
+                    finalData = rawData[0]; 
                 } else {
                     throw new Error("CORNERS API returned unexpected data format.");
                 }
@@ -341,12 +364,9 @@
 
         /**
          * Fetches league stats for CARDS from the API endpoint and handles error/mock fallback.
-         * @param {string} profileId - The user profile ID.
-         * @returns {Promise<{data: Object, isMock: boolean}>} The processed chart data and a flag.
          */
         async function fetchCardsStats(profileId) {
             const encodedProfileId = encodeURIComponent(profileId);
-            // CARDS API ENDPOINT (New Endpoint)
             const apiEndpoint = `https://4751210766c8.ngrok-free.app/cards-ou-winlose?client1=${encodedProfileId}`; 
 
             const requestOptions = {
@@ -372,7 +392,7 @@
                 rawData = await response.json();
                 
                 if (Array.isArray(rawData) && rawData.length === 1) {
-                    finalData = rawData[0]; // Extract the single object from the array
+                    finalData = rawData[0]; 
                 } else {
                     throw new Error("CARDS API returned unexpected data format.");
                 }
@@ -387,25 +407,71 @@
             return { data: finalData, isMock: isMock };
         }
 
+        /**
+         * Fetches market group stats for the Polar Area Chart.
+         */
+        async function fetchMarketGroupStats(profileId) {
+            const encodedProfileId = encodeURIComponent(profileId);
+            const apiEndpoint = `https://4751210766c8.ngrok-free.app/marketgroup-stats?client1=${encodedProfileId}`; 
+
+            const requestOptions = {
+                method: "GET",
+                headers: {
+                    "ngrok-skip-browser-warning": "true", 
+                    "Accept": "application/json" 
+                }
+            };
+            
+            let finalData = null;
+            let isMock = false;
+
+            try {
+                console.log(`Attempting to fetch Market Group data from: ${apiEndpoint}`);
+                const response = await fetch(apiEndpoint, requestOptions);
+                
+                if (!response.ok) {
+                    throw new Error(`HTTP error! Status: ${response.status}`);
+                }
+
+                const rawData = await response.json();
+                
+                if (Array.isArray(rawData)) {
+                    if (rawData.length === 0) {
+                        console.warn("Market Group API returned an empty array. Falling back to mock data.");
+                        finalData = generateMarketGroupMockData();
+                        isMock = true;
+                    } else {
+                        finalData = rawData; 
+                    }
+                } else {
+                    throw new Error("Market Group API returned unexpected data format (not an array).");
+                }
+                
+            } catch (error) {
+                console.error("Critical Fetch Error for Market Group Stats:", error.message);
+                console.warn("Falling back to mock data for Market Groups.");
+                
+                finalData = generateMarketGroupMockData();
+                isMock = true;
+            }
+            return { data: finalData, isMock: isMock };
+        }
+
 
         // ======================================================================
         // CHART RENDERING FUNCTIONS
         // ======================================================================
-
+        
         /**
          * Renders a stacked bar chart based on the provided data object.
-         * @param {Object} data - The object returned by fetchStats functions, e.g., { data: { Labels: [], Win: [], Loss: [], Void: [] }, isMock: false }
-         * @param {string} canvasId - The ID of the canvas element to draw on.
-         * @param {string} title - The title of the chart.
          */
         function createStackedBarChart(data, canvasId, title) {
             const ctx = document.getElementById(canvasId).getContext('2d');
             
-            // Taildwind colors mapped to Chart.js
             const colors = tailwind.config.theme.extend.colors;
             const primaryWinColor = colors['chart-green']; 
-            const primaryLossColor = colors['accent-2']; // NEON PINK for loss
-            const primaryVoidColor = colors['accent-1']; // NEON CYAN for void
+            const primaryLossColor = colors['accent-2']; 
+            const primaryVoidColor = colors['accent-1']; 
             let chartData = data.data;
 
             new Chart(ctx, {
@@ -453,7 +519,7 @@
                         },
                         title: {
                              display: true,
-                             text: title, // Use a hidden title for accessibility if needed, main title is in HTML
+                             text: title, 
                              font: {
                                  size: 16,
                                  weight: 'bold'
@@ -484,6 +550,128 @@
         }
 
 
+        // ======================================================================
+        // === DUAL POLAR CHART FUNCTION: MARKET GROUP STAKE & PL (UPDATED) ===
+        // ======================================================================
+        /**
+         * Renders two side-by-side Polar Area charts for Market Group Stake and P/L.
+         */
+        function createDualMarketGroupCharts(data) {
+            const rawData = data.data;
+            const colors = tailwind.config.theme.extend.colors;
+
+            const labels = rawData.map(item => item.marketGroup);
+            const stakes = rawData.map(item => item.totalStake);
+            const rois = rawData.map(item => item.roi);
+            
+            // Calculate Profit/Loss (PL) for each market group
+            const pls = rawData.map(item => (item.totalStake * item.roi / 100));
+            
+            const colorPalette = [
+                colors['chart-green'], colors['accent-2'], colors['chart-blue'], colors['chart-red'], 
+                colors['chart-yellow'], colors['chart-purple'], colors['chart-orange'], '#0099ff', '#99ff00', '#ff0099'
+            ];
+            
+            const backgroundColors = labels.map((_, index) => colorPalette[index % colorPalette.length]);
+
+            // Helper for formatting large numbers and ROI/PL
+            const formatValue = (value, type) => {
+                const floatValue = parseFloat(value);
+                if (type === 'ROI') return `${floatValue.toFixed(2)}%`; 
+                
+                // For Stake (STAKE) or P/L (PL) - Format as currency/large number
+                const sign = floatValue < 0 ? '-' : '';
+                const absValue = Math.abs(floatValue);
+
+                if (absValue >= 1000000) return `${sign}${(absValue / 1000000).toFixed(1)}M`;
+                if (absValue >= 1000) return `${sign}${(absValue / 1000).toFixed(0)}K`;
+                return `${sign}${absValue.toFixed(2)}`;
+            };
+
+            // --- 1. STAKE CHART CONFIGURATION ---
+            const stakeCtx = document.getElementById('marketGroupStakeChart').getContext('2d');
+            const stakeChartData = {
+                labels: labels,
+                datasets: [{
+                    label: 'Total Stake',
+                    data: stakes, // Use raw stake value for magnitude
+                    backgroundColor: backgroundColors.map(color => color + 'b3'), 
+                    borderColor: colors['surface'], 
+                    borderWidth: 2
+                }],
+            };
+            
+            // --- 2. PL CHART CONFIGURATION (UPDATED) ---
+            const plCtx = document.getElementById('marketGroupPLChart').getContext('2d');
+            const plChartData = {
+                labels: labels,
+                datasets: [{
+                    label: 'P/L',
+                    data: pls.map(Math.abs), // Use absolute PL for magnitude
+                    backgroundColor: backgroundColors.map(color => color + 'b3'), 
+                    borderColor: colors['surface'], 
+                    borderWidth: 2
+                }],
+            };
+
+            // Common options for both charts
+            const commonOptions = {
+                responsive: true,
+                maintainAspectRatio: false,
+                scale: {
+                    grid: {
+                        color: colors['text-muted'] + '22',
+                    },
+                    ticks: {
+                        backdropColor: colors['surface'], 
+                        color: colors['text-muted'],
+                        font: { size: 12 },
+                        z: 2 
+                    },
+                },
+                plugins: {
+                    legend: {
+                        position: 'bottom', 
+                        labels: {
+                            color: colors['text-light'],
+                            boxWidth: 10,
+                        }
+                    },
+                    tooltip: {
+                        backgroundColor: colors['surface'],
+                        titleColor: colors['text-light'],
+                        bodyColor: colors['text-light'],
+                        borderColor: colors['accent-1'],
+                        borderWidth: 1,
+                        callbacks: {
+                            label: function(context) {
+                                const marketGroup = context.label;
+                                const roi = rois[context.dataIndex];
+                                const stake = stakes[context.dataIndex];
+                                const pl = pls[context.dataIndex];
+                                
+                                return `${marketGroup}: Stake ${formatValue(stake, 'STAKE')} | P/L ${formatValue(pl, 'PL')} | ROI ${formatValue(roi, 'ROI')}`;
+                            }
+                        }
+                    }
+                }
+            };
+            
+            // Create the charts
+            new Chart(stakeCtx, {
+                type: 'polarArea',
+                data: stakeChartData,
+                options: { ...commonOptions, plugins: { ...commonOptions.plugins, title: { display: true, text: 'Stake per Market Group', color: colors['text-light'] } } },
+            });
+
+            new Chart(plCtx, {
+                type: 'polarArea',
+                data: plChartData,
+                options: { ...commonOptions, plugins: { ...commonOptions.plugins, title: { display: true, text: 'P/L per Market Group', color: colors['text-light'] } } },
+            });
+        }
+
+
         /** Application startup function. */
         async function initializeApp() {
             // Read profile from URL and update sidebar links
@@ -503,13 +691,17 @@
 
             // --- Data Fetching and Chart Creation ---
 
-            // 1. Fetch and render CORNERS chart
-            const cornersData = await fetchCornersStats(profile);
-            createStackedBarChart(cornersData, 'leagueStatsChart', 'Corners Over/Under');
+            // 1. Fetch and render DUAL MARKET GROUP STAKE/PL charts
+            const marketGroupData = await fetchMarketGroupStats(profile);
+            createDualMarketGroupCharts(marketGroupData);
             
-            // 2. Fetch and render CARDS chart (NEW)
+            // 2. Fetch and render CORNERS chart (EXISTING)
+            const cornersData = await fetchCornersStats(profile);
+            createStackedBarChart(cornersData, 'leagueStatsChart', 'Win/Loss/Void Count by League on Corners Over/Under');
+            
+            // 3. Fetch and render CARDS chart (EXISTING)
             const cardsData = await fetchCardsStats(profile);
-            createStackedBarChart(cardsData, 'leagueCardsStatsChart', 'Cards Over/Under');
+            createStackedBarChart(cardsData, 'leagueCardsStatsChart', 'Win/Loss/Void Count by League on Cards Over/Under');
 
 
             // Set up Event Listeners
