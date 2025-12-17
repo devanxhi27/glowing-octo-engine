@@ -833,40 +833,186 @@
         }
     }
 
-    function renderEventsChart() {
-        if (!chartData || chartData.length === 0) return;
-        // const latestData = chartData.slice(-56);
-        const latestData = chartData;
+   function renderEventsChart() {
+    if (!chartData || chartData.length === 0) return;
+    // const latestData = chartData.slice(-56);
+    const latestData = chartData;
+    
+    const weeklyEvents = {};
+    const weeklyEventsDetails = {};
+    latestData.forEach(item => {
+        const weekKey = item.week; 
+        if (!weekKey) return; 
+        weeklyEvents[weekKey] = (weeklyEvents[weekKey] || 0) + item.events;
         
-        const weeklyEvents = {};
-        latestData.forEach(item => {
-            const weekKey = item.week; 
-            if (!weekKey) return; 
-            weeklyEvents[weekKey] = (weeklyEvents[weekKey] || 0) + item.events;
-        });
+        // Use a safe check for eventTags
+        if (item.eventTags && Array.isArray(item.eventTags)) {
+             item.eventTags.forEach(eventTag => {
+                let parts = eventTag.split("__");
+                if (parts.length < 5) return; // Safety check for tag structure
+                
+                let eventHome = parts[0];
+                let eventAway = parts[1];
+                let eventDate = parts[3];
+                let eventLine = parts[4];
+                
+                let eventAssembled = `${eventDate} | ${eventHome} vs ${eventAway} : ${eventLine}`;
+                
+                if (!weeklyEventsDetails[weekKey]) {
+                    weeklyEventsDetails[weekKey] = [];
+                }
+                weeklyEventsDetails[weekKey].push(eventAssembled);
+            });
+        }
+    });
+    
+    const orderedKeys = Object.keys(weeklyEvents).sort((a, b) => {
+        const yearA = parseInt(a.substring(a.length - 4));
+        const weekA = parseInt(a.substring(5, a.indexOf(' ', 5)));
         
-        const orderedKeys = Object.keys(weeklyEvents).sort((a, b) => {
-            const yearA = parseInt(a.substring(a.length - 4));
-            const weekA = parseInt(a.substring(5, a.indexOf(' ', 5)));
-            
-            const yearB = parseInt(b.substring(b.length - 4));
-            const weekB = parseInt(b.substring(5, b.indexOf(' ', 5)));
-            
-            if (yearA !== yearB) return yearA - yearB;
-            return weekA - weekB;
-        });
+        const yearB = parseInt(b.substring(b.length - 4));
+        const weekB = parseInt(b.substring(5, b.indexOf(' ', 5)));
+        
+        if (yearA !== yearB) return yearA - yearB;
+        return weekA - weekB;
+    });
 
-        const orderedData = orderedKeys.map(k => weeklyEvents[k]);
-        const labels = orderedKeys.map(key => {
-             const weekNum = key.substring(5, key.indexOf(' ', 5));
-             return `Wk ${weekNum}`;
-        });
+    const orderedData = orderedKeys.map(k => weeklyEvents[k]);
+    const labels = orderedKeys.map(key => {
+         const weekNum = key.substring(5, key.indexOf(' ', 5));
+         return `Wk ${weekNum}`;
+    });
 
-        const config = getChartConfig('line', labels, orderedData, 'Events', ' Events', 'accent-1');
-        config.options.elements = { line: { tension: 0.2 }, point: { radius: 3 } };
+    // --- START: MODAL GENERATION AND MANAGEMENT (Self-Contained) ---
+    
+    const MODAL_ID = 'events-chart-modal';
+    
+    // Define the close function and expose it globally for the dynamically generated button's `onclick`
+    const closeModal = () => {
+        const container = document.getElementById(MODAL_ID);
+        const content = document.getElementById('events-chart-modal-content');
+        if (container && content) {
+            container.classList.add('hidden');
+            container.classList.remove('flex');
+            // Animate out
+            content.classList.remove('scale-100', 'opacity-100');
+            content.classList.add('scale-95', 'opacity-0');
+            document.body.style.overflow = 'auto';
+        }
+    };
+    window.closeEventsChartModal = closeModal; 
 
-        new Chart(document.getElementById('eventsPerWeekChart').getContext('2d'), config);
+    // Create modal element if it doesn't exist
+    let modalContainer = document.getElementById(MODAL_ID);
+    if (!modalContainer) {
+        modalContainer = document.createElement('div');
+        modalContainer.id = MODAL_ID;
+        // Tailwind classes for fixed, full screen, dark backdrop, initially hidden
+        modalContainer.className = 'fixed inset-0 z-50 bg-black/80 hidden items-center justify-center p-4 transition-all duration-300'; 
+        
+        // Inner HTML structure using Tailwind classes
+        modalContainer.innerHTML = `
+            <div id="events-chart-modal-content" class="relative w-full max-w-lg bg-surface rounded-xl shadow-2xl overflow-hidden border border-accent-1/50 transform transition-all duration-300 scale-95 opacity-0">
+                <!-- Header -->
+                <div class="flex justify-between items-center p-4 md:p-6 bg-surface/80 border-b border-accent-1/50">
+                    <h3 id="modal-week-title" class="text-xl font-bold text-accent-1">Event Details</h3>
+                    <button onclick="window.closeEventsChartModal()" class="text-text-muted hover:text-white transition duration-200">
+                        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+                    </button>
+                </div>
+                
+                <!-- Body -->
+                <div class="p-4 md:p-6 max-h-[70vh] overflow-y-auto">
+                    <ul id="modal-content-list" class="space-y-2">
+                        <!-- Content populated by showModal -->
+                    </ul>
+                </div>
+
+                <!-- Footer -->
+                <div class="p-4 md:p-6 border-t border-accent-1/50">
+                    <button onclick="window.closeEventsChartModal()" class="w-full px-4 py-2 bg-accent-1/80 hover:bg-accent-1 text-white font-semibold rounded-lg transition duration-200 shadow-md shadow-accent-1/30">
+                        Close
+                    </button>
+                </div>
+            </div>
+        `;
+        document.body.appendChild(modalContainer);
+
+        // Close on backdrop click (only if the click target is the container itself)
+        modalContainer.onclick = (e) => {
+            if (e.target === modalContainer) {
+                closeModal();
+            }
+        };
     }
+
+    // Define the show function (local to the chart renderer)
+    const showModal = (weekKey, details) => {
+        const titleEl = document.getElementById('modal-week-title');
+        const listEl = document.getElementById('modal-content-list');
+        const container = document.getElementById(MODAL_ID);
+        const content = document.getElementById('events-chart-modal-content');
+
+        if (!titleEl || !listEl || !container || !content) return;
+
+        titleEl.textContent = `Events for ${weekKey}`;
+        listEl.innerHTML = ''; // Clear previous content
+
+        if (details && details.length > 0) {
+            details.forEach(detail => {
+                const li = document.createElement('li');
+                // Styling for list item
+                li.className = 'py-2 px-3 bg-surface/50 text-sm text-text-light rounded-md border border-accent-1/20 break-words';
+                li.textContent = detail;
+                listEl.appendChild(li);
+            });
+        } else {
+            listEl.innerHTML = '<li class="p-2 text-sm text-text-muted">No specific event details found for this week.</li>';
+        }
+
+        container.classList.remove('hidden');
+        container.classList.add('flex'); // Show backdrop
+        document.body.style.overflow = 'hidden';
+        
+        // Animate in
+        setTimeout(() => {
+            content.classList.remove('scale-95', 'opacity-0');
+            content.classList.add('scale-100', 'opacity-100');
+        }, 10);
+    };
+    
+    // --- END: MODAL GENERATION AND MANAGEMENT ---
+
+    const config = getChartConfig('line', labels, orderedData, 'Events', ' Events', 'accent-1');
+    config.options.elements = { line: { tension: 0.2 }, point: { radius: 3 } };
+    // console.log(weeklyEventsDetails); // Keep your original console log
+
+    // --- ADD CLICK HANDLER TO CHART OPTIONS ---
+    config.options.onClick = (e) => {
+        // Use Chart.getChart to ensure we use the correct instance if it was destroyed/re-created
+        let eventsChartInstance = Chart.getChart('eventsPerWeekChart');
+        if (!eventsChartInstance) return;
+
+        const points = eventsChartInstance.getElementsAtEventForMode(e, 'nearest', { intersect: true }, true);
+
+        if (points.length) {
+            const firstPoint = points[0];
+            const index = firstPoint.index;
+            const weekKey = orderedKeys[index]; // Get the week key from the ordered list
+            
+            showModal(weekKey, weeklyEventsDetails[weekKey] || []);
+        }
+    };
+    // ------------------------------------------
+
+    // Handle existing chart instance cleanup if needed (assuming `eventsChartInstance` is global)
+    let eventsChartInstance = Chart.getChart('eventsPerWeekChart');
+    if (eventsChartInstance) {
+        eventsChartInstance.destroy();
+    }
+    
+    new Chart(document.getElementById('eventsPerWeekChart').getContext('2d'), config);
+}
 
     function renderMarketCharts() {
         const { stakeData, roiData } = generateMarketData();
