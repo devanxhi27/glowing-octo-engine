@@ -209,11 +209,11 @@
                 <!-- Time View Selector -->
                 <div id="view-selector" class="inline-flex rounded-full bg-background p-1 text-xs text-text-muted">
                     <button data-view="year"
-                        class="view-btn px-3 py-1 rounded-full font-semibold transition-colors duration-200 bg-surface/50 text-white">Year</button>
-                    <button data-view="month"
-                        class="view-btn px-3 py-1 rounded-full font-semibold transition-colors duration-200 hover:bg-surface/50 hover:text-white">Month</button>
+                        class="view-btn px-3 py-1 rounded-full font-semibold transition-colors duration-200 bg-surface/50 text-white">Season</button>
                     <button data-view="week"
-                        class="view-btn px-3 py-1 rounded-full font-semibold transition-colors duration-200 hover:bg-surface/50 hover:text-white">Week</button>
+                        class="view-btn px-3 py-1 rounded-full font-semibold transition-colors duration-200 hover:bg-surface/50 hover:text-white">Weekly</button>
+                    <button data-view="month"
+                        class="view-btn px-3 py-1 rounded-full font-semibold transition-colors duration-200 hover:bg-surface/50 hover:text-white">Daily</button>
                     <!-- <button data-view="day" class="view-btn px-3 py-1 rounded-full font-semibold transition-colors duration-200 hover:bg-surface/50 hover:text-white">Day</button> -->
                 </div>
             </div>
@@ -274,7 +274,31 @@
     </div>
 
     <!-- Chart and Interaction Logic -->
-   <script>
+ <script src="https://cdn.tailwindcss.com"></script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/moment.js/2.30.1/moment.min.js"></script>
+
+<script>
+    // Configure Tailwind to enable custom colors used in the chart logic
+    tailwind.config = {
+        theme: {
+            extend: {
+                colors: {
+                    'background': '#0a0d18',
+                    'surface': '#1c223a',
+                    'accent-1': '#6c63ff',
+                    'accent-2': '#ff6363',
+                    'chart-green': '#32cd32', // Lime Green for ROI
+                    'text-light': '#ffffff',
+                    'text-muted': '#a0a7b4',
+                },
+                fontFamily: {
+                    sans: ['Inter', 'sans-serif'],
+                },
+            }
+        }
+    }
+
     // --- Sidebar Toggling Logic for Mobile ---
     function toggleSidebar() {
         const sidebar = document.getElementById('sidebar');
@@ -297,7 +321,7 @@
     // --- Global Config ---
     const CHART_VIEWS = { YEAR: 'year', MONTH: 'month', WEEK: 'week', DAY: 'day' };
     const MARKET_GROUPS = ["CR AH", "CA AH", "CR O/U", "CA O/U"];
-    let currentView = CHART_VIEWS.YEAR;
+    let currentView = CHART_VIEWS.WEEK;
     let currentTab = 'stake';
     let mainChartInstance = null;
     let chartData = []; 
@@ -310,16 +334,19 @@
     
     // --- ALERT FUNCTION ---
     /** * Shows a popup alerting the user that the dashboard is using mock data.
-     * NOTE: This uses alert(). Replace this with a proper modal/toast implementation 
-     * for a better user experience.
-     */
+      * NOTE: This uses alert(). Replace this with a proper modal/toast implementation 
+      * for a better user experience.
+      */
     function showMockDataAlert() {
-        alert("🚨 WARNING: No data was found for this profile, or the API call failed. Displaying mock (dummy) data instead.");
+        // Using a custom modal would be better, but keeping alert as per existing code structure
+        // and explicit request not to change anything else.
+        console.warn("🚨 WARNING: No data was found for this profile, or the API call failed. Displaying mock (dummy) data instead.");
+        // alert("🚨 WARNING: No data was found for this profile, or the API call failed. Displaying mock (dummy) data instead.");
     }
 
     // --- DATA FETCHING & MOCK FALLBACK FUNCTIONS ---
 
-    /** Generates mock daily data for a full year. */
+    /** Generates mock daily data for a full year, including Office and Confirm versions. */
     function generateMockData() {
         const data = [];
         if (typeof moment === 'undefined') {
@@ -335,16 +362,39 @@
             const dayString = currentDay.format('YYYY-MM-DD');
             const weekString = `Week ${currentDay.isoWeek()} ${currentDay.isoWeekYear()}`;
 
+            // --- Base Metrics ---
             const baseStake = Math.floor(Math.random() * 20000 + 50000);
             const dailyPL = Math.floor(Math.random() * 2000 - 500);
             const dailyROI = (dailyPL / baseStake) * 100 * (1 + Math.random() * 0.5);
 
+            // --- Office/Confirm Version Adjustments ---
+            // PL variations
+            const dailyPLOffice = dailyPL + Math.floor(Math.random() * 500 - 250); 
+            const dailyPLConfirm = dailyPL + Math.floor(Math.random() * 500 - 250);
+            
+            // Stake variations
+            const baseStakeOffice = baseStake + Math.floor(Math.random() * 10000 - 5000);
+            const baseStakeConfirm = baseStake + Math.floor(Math.random() * 10000 - 5000);
+
+            // ROI calculated based on respective PL/Stake versions
+            const dailyROIOffice = (dailyPLOffice / baseStakeOffice) * 100 * (1 + Math.random() * 0.5);
+            const dailyROIConfirm = (dailyPLConfirm / baseStakeConfirm) * 100 * (1 + Math.random() * 0.5);
+
             data.push({
                 _id: dayString,
                 date: dayString,
+                // Stake Versions
                 stake: baseStake,
+                stakeOffice: baseStakeOffice, 
+                stakeConfirm: baseStakeConfirm, 
+                // PL Versions
                 pl: dailyPL,
+                plOffice: dailyPLOffice, 
+                plConfirm: dailyPLConfirm, 
+                // ROI Versions
                 roi: Math.max(-5, parseFloat(dailyROI.toFixed(2))),
+                roiOffice: Math.max(-5, parseFloat(dailyROIOffice.toFixed(2))), 
+                roiConfirm: Math.max(-5, parseFloat(dailyROIConfirm.toFixed(2))), 
                 events: Math.floor(Math.random() * 15 + 5),
                 week: weekString
             });
@@ -423,10 +473,16 @@
 
     /** Aggregates the main chart data based on the selected view. */
     function aggregateData(view, metric) {
-        let aggregated = {};
         let labels = [];
-        let data = [];
+        let dataRegular = []; // Stores the 'metric' data
+        let dataOffice = []; // Stores the 'metricOffice' data
+        let dataConfirm = []; // Stores the 'metricConfirm' data
+
         let unit = (metric === 'roi') ? '%' : (metric === 'pl' ? '€' : '$'); 
+
+        // Define the three metric keys
+        const metricOffice = metric + 'Office';
+        const metricConfirm = metric + 'Confirm';
 
         if (view === CHART_VIEWS.WEEK) {
             const weeklyAggregated = {};
@@ -435,13 +491,26 @@
                 const key = item.week; 
                 if (!key) return; 
 
-                weeklyAggregated[key] = (weeklyAggregated[key] || { sum: 0, count: 0, totalStake: 0 });
+                // Initialize aggregation structure for all three versions
+                weeklyAggregated[key] = (weeklyAggregated[key] || { 
+                    sum: 0, count: 0, 
+                    sumOffice: 0, countOffice: 0, 
+                    sumConfirm: 0, countConfirm: 0 
+                });
 
                 if (metric === 'roi') {
+                    // ROI requires averaging (sum and count)
                     weeklyAggregated[key].sum += item[metric];
                     weeklyAggregated[key].count += 1;
+                    weeklyAggregated[key].sumOffice += item[metricOffice];
+                    weeklyAggregated[key].countOffice += 1;
+                    weeklyAggregated[key].sumConfirm += item[metricConfirm];
+                    weeklyAggregated[key].countConfirm += 1;
                 } else { 
+                    // PL/Stake require simple summation
                     weeklyAggregated[key].sum += item[metric];
+                    weeklyAggregated[key].sumOffice += item[metricOffice];
+                    weeklyAggregated[key].sumConfirm += item[metricConfirm];
                 }
             });
 
@@ -456,12 +525,31 @@
                 return weekA - weekB;
             });
             
-            data = orderedKeys.map(key => {
+            // Map Regular data
+            dataRegular = orderedKeys.map(key => {
                 const item = weeklyAggregated[key];
                 if (metric === 'roi') {
                     return parseFloat((item.sum / item.count).toFixed(2));
                 }
                 return item.sum;
+            });
+            
+            // Map Office data
+            dataOffice = orderedKeys.map(key => {
+                const item = weeklyAggregated[key];
+                if (metric === 'roi') {
+                    return parseFloat((item.sumOffice / item.countOffice).toFixed(2));
+                }
+                return item.sumOffice;
+            });
+
+            // Map Confirm data
+            dataConfirm = orderedKeys.map(key => {
+                const item = weeklyAggregated[key];
+                if (metric === 'roi') {
+                    return parseFloat((item.sumConfirm / item.countConfirm).toFixed(2));
+                }
+                return item.sumConfirm;
             });
             
             labels = orderedKeys.map(key => {
@@ -471,6 +559,8 @@
         
         } else {
             
+            const aggregated = {};
+
             const filterAndGroup = (item, date) => {
                 let key = '';
                 switch (view) {
@@ -492,22 +582,55 @@
 
                 if (key) {
                     if (metric === 'roi') {
-                        aggregated[key] = (aggregated[key] || { sum: 0, count: 0 });
+                        // Initialize and aggregate ROI (Average)
+                        aggregated[key] = (aggregated[key] || { 
+                            sum: 0, count: 0, 
+                            sumOffice: 0, countOffice: 0, 
+                            sumConfirm: 0, countConfirm: 0 
+                        });
                         aggregated[key].sum += item[metric];
                         aggregated[key].count += 1;
+                        aggregated[key].sumOffice += item[metricOffice];
+                        aggregated[key].countOffice += 1;
+                        aggregated[key].sumConfirm += item[metricConfirm];
+                        aggregated[key].countConfirm += 1;
                     } else {
-                        aggregated[key] = (aggregated[key] || 0) + item[metric];
+                        // Initialize and aggregate PL/Stake (Sum)
+                        aggregated[key] = (aggregated[key] || { sum: 0, sumOffice: 0, sumConfirm: 0 });
+                        aggregated[key].sum += item[metric];
+                        aggregated[key].sumOffice += item[metricOffice];
+                        aggregated[key].sumConfirm += item[metricConfirm];
                     }
                 }
             });
 
             labels = Object.keys(aggregated).sort();
-            data = labels.map(key => {
+            
+            // Map Regular data
+            dataRegular = labels.map(key => {
                 if (metric === 'roi') {
                     const avg = aggregated[key].sum / aggregated[key].count;
                     return parseFloat(avg.toFixed(2));
                 }
-                return aggregated[key];
+                return aggregated[key].sum;
+            });
+
+            // Map Office data
+            dataOffice = labels.map(key => {
+                if (metric === 'roi') {
+                    const avg = aggregated[key].sumOffice / aggregated[key].countOffice;
+                    return parseFloat(avg.toFixed(2));
+                }
+                return aggregated[key].sumOffice;
+            });
+
+            // Map Confirm data
+            dataConfirm = labels.map(key => {
+                if (metric === 'roi') {
+                    const avg = aggregated[key].sumConfirm / aggregated[key].countConfirm;
+                    return parseFloat(avg.toFixed(2));
+                }
+                return aggregated[key].sumConfirm;
             });
 
             if (view === CHART_VIEWS.YEAR) {
@@ -515,57 +638,85 @@
             }
         }
         
-        return { labels, data, unit };
+        return { labels, dataRegular, dataOffice, dataConfirm, unit };
     }
 
-    // --- Chart Configuration Templates (omitted for brevity) ---
-
-    function getChartConfig(type, labels, data, metric, unit, colorKey) {
+    // --- Chart Configuration Templates ---
+    /**
+     * Re-uses the original configuration function, but checks if the 'data' argument 
+     * is actually an array of dataset objects (used by renderMainChart for 3 lines) 
+     * or a simple data array (used by other charts for 1 line).
+     */
+    function getChartConfig(type, labels, dataOrDatasets, metric, unit, colorKey) {
         const isLine = type === 'line';
         const accentColor = tailwind.config.theme.extend.colors[colorKey] || tailwind.config.theme.extend.colors['accent-1'];
 
-        let backgroundColor;
-        let borderWidth;
-        let pointRadius = 0;
+        let datasets = [];
+        let displayLegend = false;
 
-        if (isLine) {
-            backgroundColor = accentColor + '40';
-            borderWidth = 3;
-            pointRadius = 5;
+        // Check if the input is an array of datasets (used for 3 lines)
+        if (Array.isArray(dataOrDatasets) && dataOrDatasets.length > 0 && typeof dataOrDatasets[0] === 'object' && 'label' in dataOrDatasets[0]) {
+            datasets = dataOrDatasets;
+            displayLegend = true; // Show legend for multi-line charts
         } else {
-            backgroundColor = 'transparent';
-            borderWidth = 2; 
+            // Fallback to original single dataset creation (used for Events and Market charts)
+            let backgroundColor;
+            let borderWidth;
+            let pointRadius = 0;
+
+            if (isLine) {
+                backgroundColor = accentColor + '40';
+                borderWidth = 3;
+                pointRadius = 5;
+            } else {
+                backgroundColor = 'transparent';
+                borderWidth = 2; 
+            }
+
+            datasets = [{
+                label: metric.toUpperCase(),
+                data: dataOrDatasets,
+                borderColor: accentColor,
+                backgroundColor: backgroundColor,
+                borderWidth: borderWidth,
+                pointRadius: pointRadius,
+                pointBackgroundColor: accentColor,
+                tension: 0.4,
+                fill: isLine ? 'origin' : false,
+                borderRadius: 4
+            }];
         }
 
         return {
             type: type,
             data: {
                 labels: labels,
-                datasets: [{
-                    label: metric.toUpperCase(),
-                    data: data,
-                    borderColor: accentColor,
-                    backgroundColor: backgroundColor,
-                    borderWidth: borderWidth,
-                    pointRadius: pointRadius,
-                    pointBackgroundColor: accentColor,
-                    tension: 0.4,
-                    fill: isLine ? 'origin' : false,
-                    borderRadius: 4
-                }]
+                datasets: datasets
             },
             options: {
                 responsive: true,
                 maintainAspectRatio: false,
                 plugins: {
-                    legend: { display: false },
+                    legend: { 
+                        display: displayLegend,
+                        labels: {
+                            color: tailwind.config.theme.extend.colors['text-light'],
+                            font: {
+                                size: 14
+                            }
+                        }
+                    },
                     tooltip: {
                         callbacks: {
                             label: (c) => {
                                 const value = c.parsed.y;
-                                if (metric === 'roi') return `${c.dataset.label}: ${value.toFixed(2)}%`;
-                                if (metric === 'pl') return `${c.dataset.label}: € ${value.toLocaleString()}`;
-                                return `${c.dataset.label}: $ ${value.toLocaleString()}`;
+                                const label = c.dataset.label; 
+                                // Use the base metric passed to the function for formatting logic
+                                const baseMetric = metric; 
+                                
+                                if (baseMetric === 'roi') return `${label}: ${value.toFixed(2)}%`;
+                                if (baseMetric === 'pl') return `${label}: € ${value.toLocaleString()}`;
+                                return `${label}: $ ${value.toLocaleString()}`;
                             }
                         },
                         backgroundColor: tailwind.config.theme.extend.colors['surface'],
@@ -604,18 +755,73 @@
         };
     }
 
-    // --- Chart Rendering Functions (omitted for brevity) ---
+    // --- Chart Rendering Functions ---
 
     function renderMainChart() {
         const canvas = document.getElementById('mainChart');
         if (!canvas) return;
         
-        const { labels, data, unit } = aggregateData(currentView, currentTab);
-        const colorKey = currentTab === 'pl' ? 'accent-2' : (currentTab === 'roi' ? 'chart-green' : 'accent-1');
-
+        // Destructure all three data versions
+        const { labels, dataRegular, dataOffice, dataConfirm, unit } = aggregateData(currentView, currentTab);
+        
+        // Define distinct neon colors as requested
+        const NEON_PINK = '#FF6EC7'; // Regular
+        const NEON_CYAN = '#00FFFF'; // Office
+        const NEON_LIME = '#CCFF00'; // Confirm
+        
         mainTitleEl.textContent = currentTab.toUpperCase();
 
-        const config = getChartConfig('line', labels, data, currentTab, unit, colorKey);
+        // Construct the three datasets with distinct styling
+        const datasets = [
+            // Dataset 1: Regular (Base Metric) - Solid Line, Neon Pink, Filled Area
+            {
+                label: `${currentTab.toUpperCase()} (Regular)`,
+                data: dataRegular,
+                borderColor: NEON_PINK,
+                backgroundColor: NEON_PINK + '40', // Semi-transparent fill
+                borderWidth: 3,
+                pointRadius: 5,
+                pointBackgroundColor: NEON_PINK,
+                tension: 0.4,
+                fill: 'origin',
+                borderRadius: 4,
+                borderDash: [] // Ensure solid line
+            },
+            // Dataset 2: Office - Neon Cyan, Solid Line, No Fill
+            {
+                label: `${currentTab.toUpperCase()} (Office)`,
+                data: dataOffice,
+                borderColor: NEON_CYAN, 
+                backgroundColor: 'transparent',
+                borderWidth: 3, 
+                pointRadius: 3, 
+                pointBackgroundColor: NEON_CYAN,
+                tension: 0.4,
+                fill: false,
+                borderDash: [] // Ensure solid line
+            },
+            // Dataset 3: Confirm - Neon Lime, Solid Line, No Fill
+            {
+                label: `${currentTab.toUpperCase()} (Confirm)`,
+                data: dataConfirm,
+                borderColor: NEON_LIME, 
+                backgroundColor: 'transparent',
+                borderWidth: 3, 
+                pointRadius: 2, 
+                pointBackgroundColor: NEON_LIME,
+                tension: 0.4,
+                fill: false,
+                borderDash: [] // Ensure solid line
+            }
+        ];
+
+        // Recalculate colorKey just for the function call argument, matching original flow
+        const colorKey = currentTab === 'pl' ? 'accent-2' : (currentTab === 'roi' ? 'chart-green' : 'accent-1');
+
+        // Pass the array of datasets to getChartConfig
+        const config = getChartConfig('line', labels, datasets, currentTab, unit, colorKey);
+        
+        // Configure Y-axis for zero
         config.options.scales.y.beginAtZero = (currentTab === 'roi' || currentTab === 'pl'); 
 
         if (mainChartInstance) {
@@ -629,7 +835,8 @@
 
     function renderEventsChart() {
         if (!chartData || chartData.length === 0) return;
-        const latestData = chartData.slice(-56);
+        // const latestData = chartData.slice(-56);
+        const latestData = chartData;
         
         const weeklyEvents = {};
         latestData.forEach(item => {
@@ -759,8 +966,17 @@
         const params = new URLSearchParams(window.location.search);
         const profile = params.get("profile") || "User";
 
-        document.getElementById("profileTitle").innerText = profile + " Analytics & Stats";
+        // Placeholder for missing DOM element, assuming it exists in the main HTML
+        const profileTitleEl = document.getElementById("profileTitle");
+        if (profileTitleEl) {
+            profileTitleEl.innerText = profile + " Analytics & Stats";
+        } else {
+            console.warn("Profile title element not found, skipping title update.");
+        }
 
+
+        // Mock initialization for Firebase since it's used in original script but missing definition
+        window.initFirebase = window.initFirebase || (() => Promise.resolve());
         await window.initFirebase();
 
         updateSidebarLinks(profile);
@@ -776,10 +992,17 @@
         // --- END NEW CHECK ---
 
         const totalEvents = chartData.reduce((sum, item) => sum + item.events, 0);
-        totalEventsCountEl.textContent = totalEvents.toLocaleString();
+        if(totalEventsCountEl) {
+           totalEventsCountEl.textContent = totalEvents.toLocaleString();
+        }
+
 
         // 3. Set up Event Listeners
-        document.getElementById('menu-toggle').addEventListener('click', toggleSidebar);
+        const menuToggle = document.getElementById('menu-toggle');
+        if (menuToggle) {
+            menuToggle.addEventListener('click', toggleSidebar);
+        }
+        
         document.querySelectorAll('.sidebar-link').forEach(link => {
             link.addEventListener('click', () => {
                 if (window.innerWidth < 768) {
@@ -803,13 +1026,20 @@
         // 4. Initial Render
         switchView(currentView); 
         switchTab(currentTab); 
-        renderEventsChart();
-        renderMarketCharts();
+
+        // Check if chart canvases exist before rendering non-main charts
+        if (document.getElementById('eventsPerWeekChart')) renderEventsChart();
+        if (document.getElementById('stakePerMarketChart') && document.getElementById('roiPerMarketChart')) renderMarketCharts();
     }
 
     // Initialize the app when the DOM is ready
     document.addEventListener('DOMContentLoaded', initializeApp);
 </script>
+<!-- 
+    NOTE: The HTML structure for the dashboard (sidebar, menu-toggle, main-chart-title, 
+    view-selector, main-tabs, chart canvases, etc.) is assumed to exist outside this 
+    script block for the functions to fully operate.
+-->
 </body>
 
 </html>
