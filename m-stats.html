@@ -703,9 +703,10 @@
                         callbacks: {
                             label: function(context) {
                                 const marketGroup = context.label;
+                               const stake = stakes[context.dataIndex];
                                 const pl = pls[context.dataIndex];
                                 const roi = rois[context.dataIndex];
-                                return `${marketGroup} P/L: ${formatValue(pl, 'PL')} | ROI: ${formatValue(roi, 'ROI')}`;
+                                return `${marketGroup} Stake: ${formatValue(stake, 'STAKE')} | P/L: ${formatValue(pl, 'PL')} | ROI: ${formatValue(roi, 'ROI')}`;
                             }
                         }
                     }
