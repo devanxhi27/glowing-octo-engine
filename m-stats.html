@@ -198,7 +198,7 @@
         <main class="space-y-6">
             
             <div class="bg-surface rounded-xl shadow-2xl p-6 border border-accent-1/20">
-                <h2 class="text-lg font-semibold text-text-light mb-4">Market Group Performance Analysis (Stake vs. P/L)</h2>
+                <h2 class="text-lg font-semibold text-text-light mb-4">Market Group Performance Analysis (Fixed Stake vs. Fixed ROI)</h2>
                 <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
                     
                     <div class="chart-container-lg">
@@ -413,7 +413,7 @@
          */
         async function fetchMarketGroupStats(profileId) {
             const encodedProfileId = encodeURIComponent(profileId);
-            const apiEndpoint = `https://4751210766c8.ngrok-free.app/marketgroup-stats?client1=${encodedProfileId}`; 
+            const apiEndpoint = `https://4751210766c8.ngrok-free.app/marketgroup-stats-fixed?client1=${encodedProfileId}`; 
 
             const requestOptions = {
                 method: "GET",
@@ -561,13 +561,33 @@
             const rawData = data.data;
             const colors = tailwind.config.theme.extend.colors;
 
-            const labels = rawData.map(item => item.marketGroup);
+          
+            let mr_events = rawData.map(item => item.events);
+            const labels = rawData.map(item => item.marketGroup.split("_")[1]);
             const stakes = rawData.map(item => item.totalStake);
             const rois = rawData.map(item => item.roi);
             
             // Calculate Profit/Loss (PL) for each market group (SIGNED VALUE)
             const pls = rawData.map(item => (item.totalStake * item.roi / 100));
+
+             let totalStake = stakes.reduce((a, b) => a + b, 0);
+             let totalPls = pls.reduce((a, b) => a + b, 0);
+             let totalRoi = totalPls / totalStake * 100;
+
+
+             console.log({totalStake: totalStake})
+             console.log({totalPl: totalPls})
+             console.log({totalRoi: totalRoi})
             
+             let uniqueEvents = [];
+             for (const mark of mr_events) {
+                for (const event of mark) {
+                    let eventspl = event.eventTag2.split("_");
+                    let eventName = eventspl[0] + " vs " +  eventspl[1] + " -- " + eventspl[3] + ", Odd: " + event.oddNum + ", Eval: " + event.eval;
+                    uniqueEvents.push({date: event.eventTag.split("__")[3],home: eventspl[0], away: eventspl[1], marketGr: eventspl[3], odd: event.oddNum, eval: event.eval, pl: event.plFixed});
+                }
+             }
+             console.log(JSON.stringify(uniqueEvents));
             const colorPalette = [
                 colors['chart-green'], colors['accent-2'], colors['chart-blue'], colors['chart-red'], 
                 colors['chart-yellow'], colors['chart-purple'], colors['chart-orange'], '#0099ff', '#99ff00', '#ff0099'
@@ -651,8 +671,8 @@
             const plChartData = {
                 labels: labels,
                 datasets: [{
-                    label: 'Profit/Loss',
-                    data: pls, // Use the signed PL data
+                    label: 'ROI',
+                    data: rois, // Use the signed PL data
                     backgroundColor: plBackgroundColors, 
                     borderColor: plBackgroundColors.map(c => c + 'aa'), // Slightly darker border
                     borderWidth: 1
@@ -670,7 +690,7 @@
                     },
                     title: { 
                         display: true, 
-                        text: 'P/L per Market Group', 
+                        text: 'ROI per Market Group', 
                         font: { size: 16, weight: 'bold' }, 
                         color: colors['text-light'] 
                     },
@@ -695,7 +715,7 @@
                         position: 'bottom',
                         grid: { color: colors['text-muted'] + '22' },
                         ticks: { color: colors['text-muted'], callback: function(value) { return formatValue(value, 'PL'); } },
-                        title: { display: true, text: 'Profit / Loss', color: colors['text-light'] }
+                        title: { display: true, text: 'ROI', color: colors['text-light'] }
                     },
                     y: {
                         grid: { display: false },
