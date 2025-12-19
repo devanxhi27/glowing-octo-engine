@@ -211,7 +211,7 @@
 
                 </div>
             </div>
-            <div class="bg-surface rounded-xl shadow-2xl p-6 border border-accent-1/20">
+            <!-- <div class="bg-surface rounded-xl shadow-2xl p-6 border border-accent-1/20">
                 <h2 class="text-lg font-semibold text-text-light mb-4">Win/Loss/Void Count by League on Corners Over/Under</h2>
                 <div class="relative h-96">
                     <canvas id="leagueStatsChart"></canvas>
@@ -222,6 +222,35 @@
                 <h2 class="text-lg font-semibold text-text-light mb-4">Win/Loss/Void Count by League on Cards Over/Under</h2>
                 <div class="relative h-96">
                     <canvas id="leagueCardsStatsChart"></canvas>
+                </div>
+            </div> -->
+            <div class="bg-surface rounded-xl shadow-2xl p-6 border border-accent-1/20">
+                <h2 class="text-lg font-semibold text-text-light mb-4">Market Corners Performance Analysis (Fixed Stake vs. Fixed ROI)</h2>
+                <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
+                    
+                    <div class="chart-container-lg">
+                        <canvas id="marketCornersStakeChart" class="max-w-full max-h-full"></canvas>
+                    </div>
+
+                    <div class="chart-container-lg">
+                        <canvas id="marketCornersPLChart" class="max-w-full max-h-full"></canvas>
+                    </div>
+
+                </div>
+            </div>
+
+             <div class="bg-surface rounded-xl shadow-2xl p-6 border border-accent-1/20">
+                <h2 class="text-lg font-semibold text-text-light mb-4">Market Cards Performance Analysis (Fixed Stake vs. Fixed ROI)</h2>
+                <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
+                    
+                    <div class="chart-container-lg">
+                        <canvas id="marketCardsStakeChart" class="max-w-full max-h-full"></canvas>
+                    </div>
+
+                    <div class="chart-container-lg">
+                        <canvas id="marketCardsPLChart" class="max-w-full max-h-full"></canvas>
+                    </div>
+
                 </div>
             </div>
         </main>
@@ -763,13 +792,21 @@
             const marketGroupData = await fetchMarketGroupStats(profile);
             createDualMarketGroupCharts(marketGroupData);
             
-            // 2. Fetch and render CORNERS chart (EXISTING)
-            const cornersData = await fetchCornersStats(profile);
-            createStackedBarChart(cornersData, 'leagueStatsChart', 'Win/Loss/Void Count by League on Corners Over/Under');
+            // // 2. Fetch and render CORNERS chart (EXISTING)
+            // const cornersData = await fetchCornersStats(profile);
+            // createStackedBarChart(cornersData, 'leagueStatsChart', 'Win/Loss/Void Count by League on Corners Over/Under');
             
-            // 3. Fetch and render CARDS chart (EXISTING)
-            const cardsData = await fetchCardsStats(profile);
-            createStackedBarChart(cardsData, 'leagueCardsStatsChart', 'Win/Loss/Void Count by League on Cards Over/Under');
+            // // 3. Fetch and render CARDS chart (EXISTING)
+            // const cardsData = await fetchCardsStats(profile);
+            // createStackedBarChart(cardsData, 'leagueCardsStatsChart', 'Win/Loss/Void Count by League on Cards Over/Under');
+
+            // 2. Fetch and render DUAL Market Corners Stake/PL charts
+            const marketGroupCorners = await fetchMarketGroupCorners(profile);
+            createDualMarketCornersCharts(marketGroupCorners);
+
+            // 3. Fetch and render DUAL Market Cards Stake/PL charts
+            const marketGroupCards = await fetchMarketGroupCards(profile);
+            createDualMarketCardsCharts(marketGroupCards);
 
 
             // Set up Event Listeners
@@ -789,6 +826,517 @@
 
         // Initialize the app when the DOM is ready
         document.addEventListener('DOMContentLoaded', initializeApp);
+
+
+        function createDualMarketCornersCharts(data) {
+            const rawData = data.data;
+            const colors = tailwind.config.theme.extend.colors;
+
+          
+            let mr_events = rawData.map(item => item.events);
+            const labels = rawData.map(item => item.leagueGroup);
+            const stakes = rawData.map(item => item.totalStake);
+            const rois = rawData.map(item => item.roi);
+            
+            // Calculate Profit/Loss (PL) for each market group (SIGNED VALUE)
+            const pls = rawData.map(item => (item.totalStake * item.roi / 100));
+
+             let totalStake = stakes.reduce((a, b) => a + b, 0);
+             let totalPls = pls.reduce((a, b) => a + b, 0);
+             let totalRoi = totalPls / totalStake * 100;
+
+
+             console.log({totalStake: totalStake})
+             console.log({totalPl: totalPls})
+             console.log({totalRoi: totalRoi})
+            
+             let uniqueEvents = [];
+             for (const mark of mr_events) {
+                for (const event of mark) {
+                    let eventspl = event.eventTag2.split("_");
+                    let eventName = eventspl[0] + " vs " +  eventspl[1] + " -- " + eventspl[3] + ", Odd: " + event.oddNum + ", Eval: " + event.eval;
+                    uniqueEvents.push({date: event.eventTag.split("__")[3],home: eventspl[0], away: eventspl[1], marketGr: eventspl[3], odd: event.oddNum, eval: event.eval, pl: event.plFixed});
+                }
+             }
+             console.log(JSON.stringify(uniqueEvents));
+            const colorPalette = [
+                colors['chart-green'], colors['accent-2'], colors['chart-blue'], colors['chart-red'], 
+                colors['chart-yellow'], colors['chart-purple'], colors['chart-orange'], '#0099ff', '#99ff00', '#ff0099'
+            ];
+            
+            const backgroundColors = labels.map((_, index) => colorPalette[index % colorPalette.length]);
+
+            // Helper for formatting large numbers and ROI/PL
+            const formatValue = (value, type) => {
+                const floatValue = parseFloat(value);
+                if (type === 'ROI') return `${floatValue.toFixed(2)}%`; 
+                
+                // For Stake (STAKE) or P/L (PL) - Format as currency/large number
+                const sign = floatValue < 0 ? '-' : '';
+                const absValue = Math.abs(floatValue);
+
+                if (absValue >= 1000000) return `${sign}${(absValue / 1000000).toFixed(1)}M`;
+                if (absValue >= 1000) return `${sign}${(absValue / 1000).toFixed(0)}K`;
+                return `${sign}${absValue.toFixed(2)}`;
+            };
+
+           // --- 1. STAKE CHART CONFIGURATION (Converted to Bar Chart) ---
+            const stakeCtx = document.getElementById('marketCornersStakeChart').getContext('2d');
+
+            const stakeChartData = {
+                labels: labels,
+                datasets: [{
+                    label: 'Total Stake',
+                    data: stakes, // Raw stake value
+                    backgroundColor: backgroundColors.map(color => color + 'b3'), 
+                    borderColor: colors['surface'], 
+                    borderWidth: 2,
+                    borderRadius: 4, // Optional: rounds the corners of the bars
+                }],
+            };
+
+            // Updated options for Bar Chart
+            const bar1CommonOptions = {
+                type: 'bar', // Specify the chart type
+                responsive: true,
+                maintainAspectRatio: false,
+                indexAxis: 'x', // Change to 'y' if you want a horizontal bar chart
+                scales: {
+                    y: {
+                        beginAtZero: true,
+                        grid: {
+                            color: colors['text-muted'] + '22',
+                            drawBorder: false,
+                        },
+                        ticks: {
+                            color: colors['text-muted'],
+                            font: { size: 12 },
+                            // Optional: format the Y-axis labels using your helper
+                            callback: function(value) {
+                                return formatValue(value, 'STAKE');
+                            }
+                        }
+                    },
+                    x: {
+                        grid: {
+                            display: false // Usually looks cleaner without vertical lines
+                        },
+                        ticks: {
+                            color: colors['text-muted'],
+                            font: { size: 12 }
+                        }
+                    }
+                },
+                plugins: {
+                    legend: {
+                        display: false, // Often redundant for single-dataset bar charts
+                        position: 'bottom', 
+                        labels: {
+                            color: colors['text-light'],
+                            boxWidth: 10,
+                        }
+                    },
+                    tooltip: {
+                        backgroundColor: colors['surface'],
+                        titleColor: colors['text-light'],
+                        bodyColor: colors['text-light'],
+                        borderColor: colors['accent-1'],
+                        borderWidth: 1,
+                        padding: 12,
+                        callbacks: {
+                            label: function(context) {
+                                const marketGroup = context.label;
+                                const roi = rois[context.dataIndex];
+                                const stake = stakes[context.dataIndex];
+                                const pl = pls[context.dataIndex];
+                                
+                                return [
+                                    `Stake: ${formatValue(stake, 'STAKE')}`,
+                                    `P/L: ${formatValue(pl, 'PL')}`,
+                                    `ROI: ${formatValue(roi, 'ROI')}`
+                                ];
+                            }
+                        }
+                    }
+                }
+            };
+
+            // --- 2. P/L CHART CONFIGURATION (Horizontal Bar - NEW) ---
+            const plCtx = document.getElementById('marketCornersPLChart').getContext('2d');
+            const plBackgroundColors = pls.map(pl => pl >= 0 ? colors['chart-green'] : colors['chart-red']);
+            const plChartData = {
+                labels: labels,
+                datasets: [{
+                    label: 'ROI',
+                    data: rois, // Use the signed PL data
+                    backgroundColor: plBackgroundColors, 
+                    borderColor: plBackgroundColors.map(c => c + 'aa'), // Slightly darker border
+                    borderWidth: 1
+                }],
+            };
+
+            // Options for Horizontal Bar Chart
+            const barCommonOptions = {
+                indexAxis: 'y', // Make it horizontal
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: {
+                        display: false // Hide the legend for simplicity
+                    },
+                    title: { 
+                        display: true, 
+                        text: 'ROI per Market Group', 
+                        font: { size: 16, weight: 'bold' }, 
+                        color: colors['text-light'] 
+                    },
+                    tooltip: {
+                        backgroundColor: colors['surface'],
+                        titleColor: colors['text-light'],
+                        bodyColor: colors['text-light'],
+                        borderColor: colors['accent-1'],
+                        borderWidth: 1,
+                        callbacks: {
+                            label: function(context) {
+                                const marketGroup = context.label;
+                               const stake = stakes[context.dataIndex];
+                                const pl = pls[context.dataIndex];
+                                const roi = rois[context.dataIndex];
+                                return `${marketGroup} Stake: ${formatValue(stake, 'STAKE')} | P/L: ${formatValue(pl, 'PL')} | ROI: ${formatValue(roi, 'ROI')}`;
+                            }
+                        }
+                    }
+                },
+                scales: {
+                    x: {
+                        position: 'bottom',
+                        grid: { color: colors['text-muted'] + '22' },
+                        ticks: { color: colors['text-muted'], callback: function(value) { return formatValue(value, 'PL'); } },
+                        title: { display: true, text: 'ROI', color: colors['text-light'] }
+                    },
+                    y: {
+                        grid: { display: false },
+                        ticks: { color: colors['text-light'] }
+                    }
+                }
+            };
+            
+            // To initialize:
+            new Chart(stakeCtx, {
+                type: 'bar',
+                data: stakeChartData,
+                options: bar1CommonOptions
+            });
+
+            new Chart(plCtx, {
+                type: 'bar', // Change type to 'bar'
+                data: plChartData,
+                options: barCommonOptions,
+            });
+        }
+
+
+        function createDualMarketCardsCharts(data) {
+            const rawData = data.data;
+            const colors = tailwind.config.theme.extend.colors;
+
+          
+            let mr_events = rawData.map(item => item.events);
+            const labels = rawData.map(item => item.leagueGroup);
+            const stakes = rawData.map(item => item.totalStake);
+            const rois = rawData.map(item => item.roi);
+            
+            // Calculate Profit/Loss (PL) for each market group (SIGNED VALUE)
+            const pls = rawData.map(item => (item.totalStake * item.roi / 100));
+
+             let totalStake = stakes.reduce((a, b) => a + b, 0);
+             let totalPls = pls.reduce((a, b) => a + b, 0);
+             let totalRoi = totalPls / totalStake * 100;
+
+
+             console.log({totalStake: totalStake})
+             console.log({totalPl: totalPls})
+             console.log({totalRoi: totalRoi})
+            
+             let uniqueEvents = [];
+             for (const mark of mr_events) {
+                for (const event of mark) {
+                    let eventspl = event.eventTag2.split("_");
+                    let eventName = eventspl[0] + " vs " +  eventspl[1] + " -- " + eventspl[3] + ", Odd: " + event.oddNum + ", Eval: " + event.eval;
+                    uniqueEvents.push({date: event.eventTag.split("__")[3],home: eventspl[0], away: eventspl[1], marketGr: eventspl[3], odd: event.oddNum, eval: event.eval, pl: event.plFixed});
+                }
+             }
+             console.log(JSON.stringify(uniqueEvents));
+            const colorPalette = [
+                colors['chart-green'], colors['accent-2'], colors['chart-blue'], colors['chart-red'], 
+                colors['chart-yellow'], colors['chart-purple'], colors['chart-orange'], '#0099ff', '#99ff00', '#ff0099'
+            ];
+            
+            const backgroundColors = labels.map((_, index) => colorPalette[index % colorPalette.length]);
+
+            // Helper for formatting large numbers and ROI/PL
+            const formatValue = (value, type) => {
+                const floatValue = parseFloat(value);
+                if (type === 'ROI') return `${floatValue.toFixed(2)}%`; 
+                
+                // For Stake (STAKE) or P/L (PL) - Format as currency/large number
+                const sign = floatValue < 0 ? '-' : '';
+                const absValue = Math.abs(floatValue);
+
+                if (absValue >= 1000000) return `${sign}${(absValue / 1000000).toFixed(1)}M`;
+                if (absValue >= 1000) return `${sign}${(absValue / 1000).toFixed(0)}K`;
+                return `${sign}${absValue.toFixed(2)}`;
+            };
+
+           // --- 1. STAKE CHART CONFIGURATION (Converted to Bar Chart) ---
+            const stakeCtx = document.getElementById('marketCardsStakeChart').getContext('2d');
+
+            const stakeChartData = {
+                labels: labels,
+                datasets: [{
+                    label: 'Total Stake',
+                    data: stakes, // Raw stake value
+                    backgroundColor: backgroundColors.map(color => color + 'b3'), 
+                    borderColor: colors['surface'], 
+                    borderWidth: 2,
+                    borderRadius: 4, // Optional: rounds the corners of the bars
+                }],
+            };
+
+            // Updated options for Bar Chart
+            const bar1CommonOptions = {
+                type: 'bar', // Specify the chart type
+                responsive: true,
+                maintainAspectRatio: false,
+                indexAxis: 'x', // Change to 'y' if you want a horizontal bar chart
+                scales: {
+                    y: {
+                        beginAtZero: true,
+                        grid: {
+                            color: colors['text-muted'] + '22',
+                            drawBorder: false,
+                        },
+                        ticks: {
+                            color: colors['text-muted'],
+                            font: { size: 12 },
+                            // Optional: format the Y-axis labels using your helper
+                            callback: function(value) {
+                                return formatValue(value, 'STAKE');
+                            }
+                        }
+                    },
+                    x: {
+                        grid: {
+                            display: false // Usually looks cleaner without vertical lines
+                        },
+                        ticks: {
+                            color: colors['text-muted'],
+                            font: { size: 12 }
+                        }
+                    }
+                },
+                plugins: {
+                    legend: {
+                        display: false, // Often redundant for single-dataset bar charts
+                        position: 'bottom', 
+                        labels: {
+                            color: colors['text-light'],
+                            boxWidth: 10,
+                        }
+                    },
+                    tooltip: {
+                        backgroundColor: colors['surface'],
+                        titleColor: colors['text-light'],
+                        bodyColor: colors['text-light'],
+                        borderColor: colors['accent-1'],
+                        borderWidth: 1,
+                        padding: 12,
+                        callbacks: {
+                            label: function(context) {
+                                const marketGroup = context.label;
+                                const roi = rois[context.dataIndex];
+                                const stake = stakes[context.dataIndex];
+                                const pl = pls[context.dataIndex];
+                                
+                                return [
+                                    `Stake: ${formatValue(stake, 'STAKE')}`,
+                                    `P/L: ${formatValue(pl, 'PL')}`,
+                                    `ROI: ${formatValue(roi, 'ROI')}`
+                                ];
+                            }
+                        }
+                    }
+                }
+            };
+
+            // --- 2. P/L CHART CONFIGURATION (Horizontal Bar - NEW) ---
+            const plCtx = document.getElementById('marketCardsPLChart').getContext('2d');
+            const plBackgroundColors = pls.map(pl => pl >= 0 ? colors['chart-green'] : colors['chart-red']);
+            const plChartData = {
+                labels: labels,
+                datasets: [{
+                    label: 'ROI',
+                    data: rois, // Use the signed PL data
+                    backgroundColor: plBackgroundColors, 
+                    borderColor: plBackgroundColors.map(c => c + 'aa'), // Slightly darker border
+                    borderWidth: 1
+                }],
+            };
+
+            // Options for Horizontal Bar Chart
+            const barCommonOptions = {
+                indexAxis: 'y', // Make it horizontal
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: {
+                        display: false // Hide the legend for simplicity
+                    },
+                    title: { 
+                        display: true, 
+                        text: 'ROI per Market Group', 
+                        font: { size: 16, weight: 'bold' }, 
+                        color: colors['text-light'] 
+                    },
+                    tooltip: {
+                        backgroundColor: colors['surface'],
+                        titleColor: colors['text-light'],
+                        bodyColor: colors['text-light'],
+                        borderColor: colors['accent-1'],
+                        borderWidth: 1,
+                        callbacks: {
+                            label: function(context) {
+                                const marketGroup = context.label;
+                               const stake = stakes[context.dataIndex];
+                                const pl = pls[context.dataIndex];
+                                const roi = rois[context.dataIndex];
+                                return `${marketGroup} Stake: ${formatValue(stake, 'STAKE')} | P/L: ${formatValue(pl, 'PL')} | ROI: ${formatValue(roi, 'ROI')}`;
+                            }
+                        }
+                    }
+                },
+                scales: {
+                    x: {
+                        position: 'bottom',
+                        grid: { color: colors['text-muted'] + '22' },
+                        ticks: { color: colors['text-muted'], callback: function(value) { return formatValue(value, 'PL'); } },
+                        title: { display: true, text: 'ROI', color: colors['text-light'] }
+                    },
+                    y: {
+                        grid: { display: false },
+                        ticks: { color: colors['text-light'] }
+                    }
+                }
+            };
+            
+            // To initialize:
+            new Chart(stakeCtx, {
+                type: 'bar',
+                data: stakeChartData,
+                options: bar1CommonOptions
+            });
+
+            new Chart(plCtx, {
+                type: 'bar', // Change type to 'bar'
+                data: plChartData,
+                options: barCommonOptions,
+            });
+        }
+
+
+        async function fetchMarketGroupCorners(profileId) {
+            const encodedProfileId = encodeURIComponent(profileId);
+            const apiEndpoint = `https://4751210766c8.ngrok-free.app/corners-stats-fixed?client1=${encodedProfileId}`; 
+
+            const requestOptions = {
+                method: "GET",
+                headers: {
+                    "ngrok-skip-browser-warning": "true", 
+                    "Accept": "application/json" 
+                }
+            };
+            
+            let finalData = null;
+            let isMock = false;
+
+            try {
+                console.log(`Attempting to fetch Market Group data from: ${apiEndpoint}`);
+                const response = await fetch(apiEndpoint, requestOptions);
+                
+                if (!response.ok) {
+                    throw new Error(`HTTP error! Status: ${response.status}`);
+                }
+
+                const rawData = await response.json();
+                
+                if (Array.isArray(rawData)) {
+                    if (rawData.length === 0) {
+                        console.warn("Market Group API returned an empty array. Falling back to mock data.");
+                        finalData = generateMarketGroupMockData();
+                        isMock = true;
+                    } else {
+                        finalData = rawData; 
+                    }
+                } else {
+                    throw new Error("Market Group API returned unexpected data format (not an array).");
+                }
+                
+            } catch (error) {
+                console.error("Critical Fetch Error for Market Group Stats:", error.message);
+                console.warn("Falling back to mock data for Market Groups.");
+                
+                finalData = generateMarketGroupMockData();
+                isMock = true;
+            }
+            return { data: finalData, isMock: isMock };
+        }
+
+        async function fetchMarketGroupCards(profileId) {
+            const encodedProfileId = encodeURIComponent(profileId);
+            const apiEndpoint = `https://4751210766c8.ngrok-free.app/cards-stats-fixed?client1=${encodedProfileId}`; 
+
+            const requestOptions = {
+                method: "GET",
+                headers: {
+                    "ngrok-skip-browser-warning": "true", 
+                    "Accept": "application/json" 
+                }
+            };
+            
+            let finalData = null;
+            let isMock = false;
+
+            try {
+                console.log(`Attempting to fetch Market Group data from: ${apiEndpoint}`);
+                const response = await fetch(apiEndpoint, requestOptions);
+                
+                if (!response.ok) {
+                    throw new Error(`HTTP error! Status: ${response.status}`);
+                }
+
+                const rawData = await response.json();
+                
+                if (Array.isArray(rawData)) {
+                    if (rawData.length === 0) {
+                        console.warn("Market Group API returned an empty array. Falling back to mock data.");
+                        finalData = generateMarketGroupMockData();
+                        isMock = true;
+                    } else {
+                        finalData = rawData; 
+                    }
+                } else {
+                    throw new Error("Market Group API returned unexpected data format (not an array).");
+                }
+                
+            } catch (error) {
+                console.error("Critical Fetch Error for Market Group Stats:", error.message);
+                console.warn("Falling back to mock data for Market Groups.");
+                
+                finalData = generateMarketGroupMockData();
+                isMock = true;
+            }
+            return { data: finalData, isMock: isMock };
+        }
     </script>
 </body>
 </html>
