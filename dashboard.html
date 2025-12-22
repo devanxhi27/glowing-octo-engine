@@ -1109,6 +1109,7 @@
 
     /** Application startup function. */
     async function initializeApp() {
+        lucide.createIcons();
         const params = new URLSearchParams(window.location.search);
         const profile = params.get("profile") || "User";
 
