@@ -263,12 +263,33 @@
 
 <script>
     // =================================
-    // BOOKMAKER ARRAY (names only)
+    // BOOKMAKER ARRAY (Fetched from API)
     // =================================
-    const bookmakers = [{"name":"SHOP ALBION"},{"name":"IGC"},{"name":"SING ALEX MAJOR"},{"name":"Grece Andreas"},{"name":"BR Thessaloniki"},{"name":"Bet365 BG"},{"name":"SHOP BG"},{"name":"NEL DB-FR"},{"name":"Jon Snow"},{"name":"Marco"},{"name":"Stefano"},{"name":"BR TR - ROME"},{"name":"Broker Sicili Anxhelo 80%"},{"name":"Fiore Italia"},{"name":"Acc IT"},{"name":"BETDEX"},{"name":"Spain Andrea"},{"name":"Shop SRB"},{"name":"Balkan/ant"},{"name":"BR - Aus,Swiss,Ger"},{"name":"BR - Brazil"},{"name":"BR - Ematiq Eur"},{"name":"BR - Noah/Bettor USD"},{"name":"BR - Theodor RO"},{"name":"BR - Valley USD"},{"name":"BR -Ari"},{"name":"BR Alb vs BG"},{"name":"BR Asia Eamon USD"},{"name":"BR Betcenter Belgium"},{"name":"BR Declan"},{"name":"Israel"},{"name":"John"},{"name":"Lumibet"},{"name":"Mads"},{"name":"Mihael"},{"name":"Minercap USA"},{"name":"Partners USA"},{"name":"Runshop Tennis 100%"},{"name":"Sportwetten 80%"},{"name":"BR - Tennis 222 63%"},{"name":"SXBet"},{"name":"Gian"},{"name":"Acc Crypto"},{"name":"Acc Asia/Exch"},{"name":"BR (Client)"},{"name":"ACC England"},{"name":"ILIA Grecce"},{"name":"Baptiste"},{"name":"SING Charles"},{"name":"BR GE Canad"},{"name":"Cico Padova"},{"name":"Shop Greece"},{"name":"BR 5010Edge"},{"name":"BR better"},{"name":"Singbet Harry"}];
+    let bookmakers = []; // Initialize empty
+
+    async function fetchBookmakers() {
+        try {
+            const requestOptions = {
+                method: "GET",
+                headers: {
+                    "ngrok-skip-browser-warning": "true", 
+                    "Accept": "application/json" 
+                }
+            };
+            const response = await fetch('https://4751210766c8.ngrok-free.app/bookmakers-groups', requestOptions);
+           
+            bookmakers = await response.json();
+            
+            // Now that data is loaded, initialize the UI
+            loadClients();
+            setupManagementModal();
+        } catch (error) {
+            console.error("Error fetching bookmakers:", error);
+        }
+    }
 
     // Default avatar icon (SVG as data URL)
-   const defaultAvatar = "public/images/chess-pawn.svg";
+    const defaultAvatar = "public/images/chess-pawn.svg";
 
     const carousel = document.getElementById("carousel");
     const leftBtn = document.querySelector(".chevron-left");
@@ -277,11 +298,8 @@
     // Enable horizontal scroll with mouse wheel
     carousel.addEventListener("wheel", (e) => {
         e.preventDefault();
-
         const profileWidth = document.querySelector(".profile").offsetWidth + 25; 
-        // 25 = your gap between items
-
-        const scrollAmount = profileWidth * 2; // scroll 2 at a time
+        const scrollAmount = profileWidth * 2; 
 
         carousel.scrollBy({
             left: e.deltaY > 0 ? scrollAmount : -scrollAmount,
@@ -294,6 +312,7 @@
     // GENERATE CARDS
     // =================================
     function loadClients() {
+        carousel.innerHTML = ""; // Clear carousel before loading
         bookmakers.forEach(bookmaker => {
             const profile = document.createElement("div");
             profile.classList.add("profile");
@@ -319,7 +338,6 @@
     // =================================
     function updateChevrons() {
         const maxScroll = carousel.scrollWidth - carousel.clientWidth;
-
         leftBtn.style.opacity = carousel.scrollLeft > 5 ? 1 : 0;
         rightBtn.style.opacity = carousel.scrollLeft < maxScroll - 5 ? 1 : 0;
     }
@@ -333,9 +351,12 @@
     });
 
     carousel.addEventListener("scroll", updateChevrons);
-    window.addEventListener("load", loadClients);
+
+    // Initial Trigger
+    window.addEventListener("load", fetchBookmakers);
     
-    window.addEventListener("load", () => {
+    // Moved modal logic into a named function to ensure it runs after data is fetched
+    function setupManagementModal() {
         const modal = document.getElementById("bookmakers-modal");
         const manageBtn = document.getElementById("manageBtn");
         const closeBtn = document.querySelector(".close-btn");
@@ -387,7 +408,7 @@
             updateChevrons();
             modal.style.display = "none";
         });
-    });
+    }
 </script>
 
 </body>
