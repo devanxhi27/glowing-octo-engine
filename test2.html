@@ -1,0 +1,601 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Clients Dashboard - Unified</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --glass-bg: rgba(255, 255, 255, 0.07);
+            --glass-border: rgba(255, 255, 255, 0.1);
+            --accent-cyan: #00fff2;
+            --accent-pink: #ff007f;
+            --modal-overlay: rgba(0, 0, 0, 0.8);
+        }
+
+        body {
+            margin: 0;
+            background: linear-gradient(135deg, #112868 0%, #8a0b80 100%) fixed;
+            min-height: 100vh;
+            font-family: "Poppins", sans-serif;
+            color: white;
+            display: flex;
+            justify-content: center;
+            padding: 40px 20px;
+        }
+
+        .container {
+            width: 100%;
+            max-width: 1400px;
+            display: flex;
+            flex-direction: column;
+            gap: 25px;
+        }
+
+        h2 {
+            text-align: center;
+            margin: 0;
+            text-shadow: 0 0 15px rgba(255, 255, 255, 0.3);
+        }
+
+        .chart-card {
+            background: var(--glass-bg);
+            backdrop-filter: blur(20px);
+            border: 1px solid var(--glass-border);
+            border-radius: 24px;
+            padding: 30px;
+            box-shadow: 0 25px 50px rgba(0, 0, 0, 0.4);
+            width: 100%;
+            height: 450px;
+            box-sizing: border-box;
+        }
+
+        .simulation-row {
+            display: flex;
+            gap: 20px;
+            width: 100%;
+            flex-wrap: wrap;
+        }
+
+        .sim-card {
+            background: var(--glass-bg);
+            backdrop-filter: blur(20px);
+            border: 1px solid var(--glass-border);
+            border-radius: 24px;
+            padding: 25px;
+            box-shadow: 0 25px 50px rgba(0, 0, 0, 0.4);
+            flex: 1;
+            min-width: 320px;
+            max-height: 600px;
+            overflow-y: auto;
+            box-sizing: border-box;
+        }
+
+        .sim-card h1 {
+            font-size: 1.4rem;
+            text-align: center;
+            margin-bottom: 20px;
+            color: var(--accent-cyan);
+        }
+
+        /* --- STYLING FOR CLIENT SIMULATIONS TABLE --- */
+        #clientList {
+            width: 100%;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: separate;
+            border-spacing: 0 8px;
+            font-size: 0.85rem;
+        }
+
+        th {
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            font-size: 0.75rem;
+            color: var(--accent-cyan);
+            padding: 12px 15px;
+            text-align: left;
+            position: sticky;
+            top: 0;
+            background: rgba(20, 30, 60, 0.8);
+            z-index: 10;
+        }
+
+        td {
+            padding: 12px 15px;
+            background: rgba(255, 255, 255, 0.05);
+            border-top: 1px solid var(--glass-border);
+            border-bottom: 1px solid var(--glass-border);
+        }
+
+        td:first-child {
+            border-left: 1px solid var(--glass-border);
+            border-radius: 10px 0 0 10px;
+            font-weight: 600;
+        }
+
+        td:last-child {
+            border-right: 1px solid var(--glass-border);
+            border-radius: 0 10px 10px 0;
+        }
+
+        tr:hover td {
+            background: rgba(255, 255, 255, 0.1);
+            border-color: var(--accent-pink);
+        }
+
+        .status-pill {
+            padding: 4px 8px;
+            border-radius: 6px;
+            font-size: 0.7rem;
+            font-weight: 700;
+            text-align: center;
+            display: inline-block;
+            min-width: 50px;
+        }
+        .status-win { background: rgba(0, 255, 242, 0.2); color: var(--accent-cyan); border: 1px solid var(--accent-cyan); }
+        .status-loss { background: rgba(255, 0, 127, 0.2); color: var(--accent-pink); border: 1px solid var(--accent-pink); }
+        .status-pending { background: rgba(255, 255, 255, 0.1); color: #ccc; border: 1px solid #555; }
+
+        /* Event Card with Edit Button */
+        .event-card {
+            background: rgba(255, 255, 255, 0.05);
+            margin-bottom: 10px;
+            padding: 15px;
+            border-radius: 12px;
+            border: 1px solid transparent;
+            transition: all 0.2s ease;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .event-card:hover {
+            background: rgba(255, 255, 255, 0.12);
+            border-color: var(--accent-pink);
+        }
+
+        .event-info {
+            flex-grow: 1;
+            text-align: left;
+            margin-right: 10px;
+        }
+
+        .event-info a {
+            color: white;
+            text-decoration: none;
+            font-weight: 500;
+            font-size: 0.9rem;
+        }
+
+        .edit-btn {
+            background: var(--accent-cyan);
+            color: #112868;
+            border: none;
+            padding: 6px 12px;
+            border-radius: 6px;
+            font-family: inherit;
+            font-weight: 600;
+            cursor: pointer;
+            font-size: 0.8rem;
+            transition: opacity 0.2s;
+        }
+
+        .edit-btn:hover {
+            opacity: 0.8;
+        }
+
+        /* MODAL STYLING */
+        .modal-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: var(--modal-overlay);
+            display: none;
+            justify-content: center;
+            align-items: center;
+            z-index: 2000;
+            backdrop-filter: blur(5px);
+        }
+
+        .modal-content {
+            background: rgba(20, 30, 60, 0.95);
+            border: 1px solid var(--accent-cyan);
+            border-radius: 20px;
+            padding: 30px;
+            width: 90%;
+            max-width: 400px;
+            text-align: center;
+            box-shadow: 0 0 30px rgba(0, 255, 242, 0.2);
+        }
+
+        .modal-header {
+            font-weight: 700;
+            margin-bottom: 5px;
+            color: var(--accent-cyan);
+        }
+
+        .modal-subheader {
+            font-size: 0.8rem;
+            opacity: 0.7;
+            margin-bottom: 20px;
+        }
+
+        .input-group {
+            display: flex;
+            justify-content: space-between;
+            gap: 15px;
+            margin-bottom: 25px;
+        }
+
+        .input-field {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .input-field label {
+            font-size: 0.75rem;
+            margin-bottom: 5px;
+            opacity: 0.8;
+        }
+
+        .input-field input {
+            background: rgba(255, 255, 255, 0.1);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            padding: 10px;
+            color: white;
+            border-radius: 8px;
+            text-align: center;
+            font-family: inherit;
+        }
+
+        .modal-actions {
+            display: flex;
+            gap: 10px;
+        }
+
+        .btn {
+            flex: 1;
+            padding: 12px;
+            border-radius: 10px;
+            border: none;
+            font-family: inherit;
+            font-weight: 600;
+            cursor: pointer;
+            transition: transform 0.1s;
+        }
+
+        .btn:active {
+            transform: scale(0.98);
+        }
+
+        .btn-apply {
+            background: var(--accent-cyan);
+            color: #112868;
+        }
+
+        .btn-close {
+            background: rgba(255, 255, 255, 0.1);
+            color: white;
+        }
+
+        .evaluation-box {
+            margin-bottom: 20px;
+            padding: 15px;
+            background: rgba(255,255,255,0.05);
+            border-radius: 12px;
+        }
+
+        .corner-widget {
+            position: fixed;
+            bottom: 20px;
+            right: 25px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            opacity: 0.45;
+            transition: opacity 0.25s ease, transform 0.25s ease;
+            cursor: pointer;
+            z-index: 999;
+        }
+
+        .corner-widget:hover {
+            opacity: 1;
+            transform: translateY(-3px);
+        }
+
+        .corner-icon {
+            width: 38px;
+            height: 38px;
+            filter: brightness(0) invert(1); /* makes it white-ish */
+            opacity: 0.8;
+            transition: opacity 0.25s ease;
+        }
+
+        .corner-widget:hover .corner-icon {
+            opacity: 1;
+        }
+
+        .corner-text {
+            margin-top: 4px;
+            font-size: 0.9rem;
+            color: rgba(255,255,255,0.8);
+            letter-spacing: 0.5px;
+            user-select: none;
+        }
+    </style>
+</head>
+
+<body>
+
+    <div class="container">
+        <h2>Performance Analysis</h2>
+        <div class="chart-card"><canvas id="unifiedChart"></canvas></div>
+
+        <div class="simulation-row">
+            <div class="sim-card" id="weekContainer">
+                <h1>Week Simulations</h1>
+                <div id="weekList"></div>
+            </div>
+            <div class="sim-card" id="clientContainer">
+                <h1>Client Simulations</h1>
+                <div id="clientList">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Client</th>
+                                <th>Events</th>
+                                <th>Odd</th>
+                                <th>Stake</th>
+                                <th>Eval</th>
+                                <th>PL</th>
+                            </tr>
+                        </thead>
+                        <tbody></tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <a href="./clients.html">
+            <div class="corner-widget">
+        
+                <img class="corner-icon" src="public\images\home-17-svgrepo-com.svg" alt="home Icon">
+                <span class="corner-text">Home</span>
+            </div>
+        </a>
+    </div>
+
+    <div class="modal-overlay" id="editModal">
+        <div class="modal-content">
+            <div class="modal-header" id="modalTitle">Match Name</div>
+            <div class="modal-line-info" id="modalMarket">Line: home_0.5</div>
+
+            <div class="input-group">
+                <div class="input-field">
+                    <label>Home Score</label>
+                    <input type="number" id="homeScore" placeholder="0" oninput="updateEvaluation()">
+                </div>
+                <div class="input-field">
+                    <label>Away Score</label>
+                    <input type="number" id="awayScore" placeholder="0" oninput="updateEvaluation()">
+                </div>
+            </div>
+
+            <div class="evaluation-box">
+                <div style="font-size: 0.7rem; opacity: 0.6; margin-bottom: 5px;">LIVE EVALUATION</div>
+                <div id="evaluationResult" class="eval-status status-pending">Enter Scores</div>
+            </div>
+
+            <div class="modal-actions">
+                <button class="btn btn-close" onclick="closeModal()">Close</button>
+                <button class="btn btn-apply" onclick="applyEdit()">Apply Result</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const API_BASE = 'https://4751210766c8.ngrok-free.app';
+        const FETCH_OPTIONS = { headers: { "ngrok-skip-browser-warning": "true", "Accept": "application/json" } };
+        let myChart = null;
+        let activeLine = "";
+
+        async function initDashboard() {
+            try {
+                const [cRes, eRes] = await Promise.all([
+                    fetch(`${API_BASE}/main-page-data`, FETCH_OPTIONS),
+                    fetch(`${API_BASE}/pending-events`, FETCH_OPTIONS)
+                ]);
+                let eventsRes = await eRes.json();
+                renderChart(await cRes.json());
+                renderWeekList(eventsRes);
+                renderClientList(eventsRes);
+            } catch (err) { console.error(err); }
+        }
+
+        function renderChart(rawData) {
+            const ctx = document.getElementById('unifiedChart').getContext('2d');
+            const PL_MULTIPLIER = 8;
+            if (myChart) myChart.destroy();
+
+            const barGrad = ctx.createLinearGradient(0, 0, 0, 400);
+            barGrad.addColorStop(0, 'rgba(0, 255, 242, 0.8)');
+            barGrad.addColorStop(1, 'rgba(0, 255, 242, 0)');
+
+            myChart = new Chart(ctx, {
+                data: {
+                    labels: rawData.map(d => d.client),
+                    datasets: [
+                        {
+                            type: 'line',
+                            label: 'Profit / Loss',
+                            data: rawData.map(d => d.pl * PL_MULTIPLIER), 
+                            borderColor: '#ff007f',
+                            backgroundColor: '#ff007f',
+                            borderWidth: 4,
+                            pointRadius: 6,
+                            pointHoverRadius: 9,
+                            tension: 0.4,
+                            order: 1
+                        },
+                        {
+                            type: 'bar',
+                            label: 'Total Stake',
+                            data: rawData.map(d => d.stake),
+                            backgroundColor: barGrad,
+                            borderColor: '#00fff2',
+                            borderWidth: 2,
+                            borderRadius: 10,
+                            order: 2
+                        }
+                    ]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    interaction: { mode: 'index', intersect: false },
+                    plugins: {
+                        legend: {
+                            labels: {
+                                color: '#ffffff',
+                                font: { family: 'Poppins', size: 14, weight: '600' }
+                            }
+                        },
+                        tooltip: {
+                            backgroundColor: 'rgba(15, 15, 35, 0.95)',
+                            callbacks: {
+                                label: function(context) {
+                                    let label = context.dataset.label || '';
+                                    let value = context.dataset.type === 'line' ? context.raw / PL_MULTIPLIER : context.raw;
+                                    return ` ${label}: $${Math.floor(value).toLocaleString()}`;
+                                }
+                            }
+                        }
+                    },
+                    scales: {
+                        y: {
+                            grid: { color: 'rgba(255, 255, 255, 0.1)' },
+                            ticks: {
+                                color: '#ffffff',
+                                callback: (v) => {
+                                    if (Math.abs(v) >= 1000000) return (v / 1000000).toFixed(1) + 'M';
+                                    if (Math.abs(v) >= 1000) return (v / 1000).toFixed(0) + 'K';
+                                    return v;
+                                }
+                            }
+                        },
+                        x: { ticks: { color: '#ffffff' } }
+                    }
+                }
+            });
+        }
+
+        function renderWeekList(data) {
+            const list = document.getElementById('weekList');
+            list.innerHTML = data.uniqueEvents.map((event) => `
+                <div class="event-card">
+                    <div class="event-info"><a href="${data.uniqueEventsWithLinks[event].league.url}" target="_blank">${event}</a></div>
+                    <button class="edit-btn" onclick="openModal('${event.replace(/'/g, "\\'")}')">Edit</button>
+                </div>
+            `).join('');
+        }
+
+        function renderClientList(data) {
+            const tableBody = document.querySelector("#clientList tbody");
+            tableBody.innerHTML = ""; 
+
+            data.results.forEach(id => {
+                id.tickets.forEach(row => {
+                    let newTr = document.createElement("tr");
+                    let eventsList = id.events;
+                    let eventString = ``;
+                    let count = 0;
+                    for (const event of eventsList) {
+                        count = count + 1
+                        eventString += count + ". " + event.split(": ")[0] + "<br>";
+                    }
+                    newTr.innerHTML = `
+                        <td>${id.client}</td>
+                        <td>${eventString}</td>
+                        <td>${row.odd}</td>
+                        <td>€${row.stakeReal}</td>
+                        <td><span class="status-pill status-pending">PENDING</span></td>
+                        <td>-</td>
+                    `;
+                    tableBody.appendChild(newTr);
+                });
+            });
+        }
+
+        function openModal(fullEventString) {
+            const parts = fullEventString.split(": ");
+            const matchName = parts[0];
+            activeLine = parts[1] || "";
+
+            document.getElementById('modalTitle').innerText = matchName;
+            document.getElementById('modalMarket').innerText = `Line: ${activeLine}`;
+            document.getElementById('homeScore').value = "";
+            document.getElementById('awayScore').value = "";
+            document.getElementById('evaluationResult').innerText = "Enter Scores";
+            document.getElementById('evaluationResult').className = "eval-status status-pending";
+            document.getElementById('editModal').style.display = 'flex';
+        }
+
+        function updateEvaluation() {
+            const h = parseFloat(document.getElementById('homeScore').value);
+            const a = parseFloat(document.getElementById('awayScore').value);
+            const display = document.getElementById('evaluationResult');
+
+            if (isNaN(h) || isNaN(a)) {
+                display.innerText = "Enter Scores";
+                display.className = "eval-status status-pending";
+                return;
+            }
+
+            const isWin = evaluateBet(h, a, activeLine);
+
+            if (isWin === true) {
+                display.innerText = "WIN";
+                display.className = "eval-status status-win";
+            } else if (isWin === false) {
+                display.innerText = "LOSS";
+                display.className = "eval-status status-loss";
+            } else {
+                display.innerText = "VOID / DRAW";
+                display.className = "eval-status status-pending";
+            }
+        }
+
+        function evaluateBet(homeGoals, awayGoals, lineStr) {
+            if (!lineStr) return null;
+            if (lineStr.toLowerCase() == "home") return homeGoals > awayGoals;
+            if (lineStr.toLowerCase() == "away") return awayGoals > homeGoals;
+            
+            const [type, valueStr] = lineStr.split('_');
+            const lineVal = parseFloat(valueStr);
+
+            switch (type.toLowerCase()) {
+                case 'home': return (homeGoals + lineVal) > awayGoals;
+                case 'away': return (awayGoals + lineVal) > homeGoals;
+                case 'over': return (homeGoals + awayGoals) > lineVal;
+                case 'under': return (homeGoals + awayGoals) < lineVal;
+                default: return null;
+            }
+        }
+
+        function closeModal() { document.getElementById('editModal').style.display = 'none'; }
+        function applyEdit() { alert("Result Saved!"); closeModal(); }
+
+        window.onclick = (e) => { if (e.target.id === 'editModal') closeModal(); };
+        window.onload = initDashboard;
+    </script>
+</body>
+</html>
