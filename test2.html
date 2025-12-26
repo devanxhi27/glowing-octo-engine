@@ -342,7 +342,7 @@
 
         <div class="simulation-row">
             <div class="sim-card" id="weekContainer">
-                <h1>Week Simulations</h1>
+                <h1>Pending Events</h1>
                 <div id="weekList"></div>
             </div>
             <div class="sim-card" id="clientContainer">
@@ -352,11 +352,9 @@
                         <thead>
                             <tr>
                                 <th>Client</th>
-                                <th>Events</th>
-                                <th>Odd</th>
                                 <th>Stake</th>
-                                <th>Eval</th>
                                 <th>PL</th>
+                                <th>Pending</th>
                             </tr>
                         </thead>
                         <tbody></tbody>
@@ -537,25 +535,15 @@
             tableBody.innerHTML = ""; 
 
             data.results.forEach(id => {
-                id.tickets.forEach(row => {
                     let newTr = document.createElement("tr");
-                    let eventsList = id.events;
-                    let eventString = ``;
-                    let count = 0;
-                    for (const event of eventsList) {
-                        count = count + 1
-                        eventString += count + ". " + event.split(": ")[0] + "<br>";
-                    }
                     newTr.innerHTML = `
-                        <td>${id.client}</td>
-                        <td>${eventString}</td>
-                        <td>${row.odd}</td>
-                        <td>€${row.stakeReal}</td>
-                        <td><span class="status-pill status-pending">PENDING</span></td>
-                        <td>-</td>
+                        <td>${id.id}</td>
+                        <td>€${id.clientStake}</td>
+                        <td>€${id.clientPl}</td>
+                        <td>€${id.clientPendingStake}</td>
+                       
                     `;
                     tableBody.appendChild(newTr);
-                });
             });
         }
 
