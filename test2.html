@@ -566,6 +566,7 @@
             if (confirm("Delete all saved results?")) {
                 eventsWithResults = {};
                 localStorage.removeItem('eventsWithResults');
+                localStorage.removeItem('fullEventDataCache');
                 initDashboard();
             }
         }
