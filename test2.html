@@ -473,32 +473,45 @@
         </div>
     </div>
 
-    <script>
+<script>
         const API_BASE = 'https://4751210766c8.ngrok-free.app';
         const FETCH_OPTIONS = { headers: { "ngrok-skip-browser-warning": "true", "Accept": "application/json" } };
         let myChart = null;
         let activeLine = "";
         let activeFullEvent = "";
+        let currentEventData = null; // Added to store data for iteration
 
         // Cache initialization
         let eventsWithResults = JSON.parse(localStorage.getItem('eventsWithResults')) || {};
 
-        async function initDashboard() {
-            try {
-                const [cRes, eRes] = await Promise.all([
-                    fetch(`${API_BASE}/main-page-data`, FETCH_OPTIONS),
-                    fetch(`${API_BASE}/pending-events`, FETCH_OPTIONS)
-                ]);
-                const clientData = await cRes.json();
-                const eventData = await eRes.json();
+       async function initDashboard() {
+    try {
+        const [cRes, eRes] = await Promise.all([
+            fetch(`${API_BASE}/main-page-data`, FETCH_OPTIONS),
+            fetch(`${API_BASE}/pending-events`, FETCH_OPTIONS)
+        ]);
+        
+        const clientData = await cRes.json();
+        const freshEventData = await eRes.json();
 
-                renderChart(clientData);
-                renderWeekList(eventData);
-                renderClientList(eventData);
-                handleClearButtonVisibility();
-                document.querySelector(".corner-text").innerText = "Last Update: " + eventData.lastUpdate;
-            } catch (err) { console.error(err); }
+        // CHECK CACHE: Load previously modified results if they exist
+        const cachedData = JSON.parse(localStorage.getItem('fullEventDataCache'));
+        
+        if (cachedData && cachedData.lastUpdate === freshEventData.lastUpdate) {
+            // Use cached data because it contains your manual evaluations
+            currentEventData = cachedData;
+        } else {
+            // Use fresh data if no cache exists or if the server data has updated
+            currentEventData = freshEventData;
         }
+
+        renderChart(clientData);
+        renderWeekList(currentEventData); // Use currentEventData
+        renderClientList(currentEventData); // Use currentEventData
+        handleClearButtonVisibility();
+        document.querySelector(".corner-text").innerText = "Last Update: " + currentEventData.lastUpdate;
+    } catch (err) { console.error(err); }
+}
 
         function handleEventClick(url) {
             if (!url || url.trim() === "") {
@@ -599,86 +612,203 @@
                 display.innerText = "LOSS";
                 display.className = "eval-status status-loss";
             } else {
-                // This handles Asian Handicaps where the score lands exactly on the line
                 display.innerText = "VOID / PUSH";
                 display.className = "eval-status status-pending";
             }
         }
 
-        function evaluateBet(h, a, line) {
-            if (!line) return null;
+        function evaluateBet(h, a, ogLine) {
+            if (!ogLine) return null;
+            let line = ogLine.replace("(", "").replace(")", "");
             const l = line.toLowerCase();
-            const parts = l.split('_'); // e.g., ["corn", "over", "10.5"] or ["home", "2"]
+            const parts = l.split('_');
 
-            // 1. Simple Win/Loss (home or away)
             if (l === "home") return h > a;
             if (l === "away") return a > h;
+            if (l === "draw") return a == h;
 
-            // 2. Corner/Card specific logic (e.g., corn_over_10.5, card_over_4.5)
-            // We treat 'h' and 'a' as whatever the metric is
             if (l.includes('over') || l.includes('under')) {
                 const isOver = l.includes('over');
-                const isUnder = l.includes('under');
-
-                // Find the numeric value in the parts (usually the last or second to last)
                 const v = parseFloat(parts.find(p => !isNaN(parseFloat(p))));
                 const total = h + a;
 
-                // Special case: corn_over_2.5_home (only count home team)
-                if (l.includes('home')) {
-                    return isOver ? h > v : h < v;
-                }
-                // Special case: corn_over_2.5_away (only count away team)
-                if (l.includes('away')) {
-                    return isOver ? a > v : a < v;
-                }
+                if (l.includes('home')) return isOver ? h > v : h < v;
+                if (l.includes('away')) return isOver ? a > v : a < v;
 
-                // Standard Over/Under (Total)
-                if (total === v) return null; // Void/Push for whole numbers
+                if (total === v) return null;
                 return isOver ? total > v : total < v;
             }
 
-            // 3. Asian Handicap / Goal Lines (e.g., home_2, away_-0.5)
             if (parts[0] === 'home' || parts[0] === 'away') {
                 const v = parseFloat(parts[1]);
                 if (parts[0] === 'home') {
                     const result = h + v;
-                    if (result === a) return null; // Push
+                    if (result === a) return null;
                     return result > a;
                 }
                 if (parts[0] === 'away') {
+                    console.log("Handicap away", parts, a, v, a + v)
                     const result = a + v;
-                    if (result === h) return null; // Push
+                    if (result === h) return null;
                     return result > h;
                 }
             }
-
             return null;
         }
 
-        function applyEdit() {
-            const h = document.getElementById('homeScore').value;
-            const a = document.getElementById('awayScore').value;
-            const resText = document.getElementById('evaluationResult').innerText;
+function applyEdit() {
+    const h = document.getElementById('homeScore').value;
+    const a = document.getElementById('awayScore').value;
+    const resText = document.getElementById('evaluationResult').innerText;
 
-            if (h === "" || a === "") return;
+    if (h === "" || a === "") return;
 
-            eventsWithResults[activeFullEvent] = {
-                score: `${h}-${a}`,
-                result: resText
-            };
+    let shortFormResult = "pen";
+    if (resText === "WIN") {
+        shortFormResult = "W";
+    } else if (resText === "LOSS") {
+        shortFormResult = "L";
+    } else if (resText === "VOID / PUSH") {
+        shortFormResult = "V";
+    }
 
-            localStorage.setItem('eventsWithResults', JSON.stringify(eventsWithResults));
-            closeModal();
-            initDashboard();
+    eventsWithResults[activeFullEvent] = {
+        score: `${h}-${a}`,
+        result: resText
+    };
+
+    let matchingIds = [];
+
+    // Step 1: Identify which IDs are affected by this event
+    if (currentEventData && currentEventData.results) {
+        currentEventData.results.forEach(idGroup => {
+            if (idGroup.rows && Array.isArray(idGroup.rows)) {
+                idGroup.rows.forEach(row => {
+                    if (row.home && row.home !== "" && row.line && row.line !== "") {
+                        let eventStr = row.home + " vs " + row.away + ": " + row.line;
+                        if (eventStr === activeFullEvent) {
+                            if (row.id && row.id !== "" && !matchingIds.includes(row.id)) {
+                                matchingIds.push(row.id);
+                            }
+                        }
+                    }
+                });
+            }
+        });
+    }
+
+    // Step 2: Update individual event rows first
+    if (currentEventData && currentEventData.results) {
+        currentEventData.results.forEach(idGroup => {
+            if (idGroup.rows && Array.isArray(idGroup.rows)) {
+                idGroup.rows.forEach(row => {
+                    if (matchingIds.includes(row.id)) {
+                        if (row.home && row.home !== "" && row.line && row.line !== "") {
+                            let eventStr = row.home + " vs " + row.away + ": " + row.line;
+                            if (eventStr === activeFullEvent) {
+                                row.eval = shortFormResult;
+                            }
+                        }
+                    }
+                });
+            }
+        });
+    }
+
+    // Step 3: Evaluate the Main Row (Type "" or Type "M")
+    if (currentEventData && currentEventData.results) {
+        currentEventData.results.forEach(idGroup => {
+            if (idGroup.rows && Array.isArray(idGroup.rows)) {
+                const currentRows = idGroup.rows;
+                currentRows.forEach(row => {
+                    if (matchingIds.includes(row.id)) {
+                        if (row.type === "" && row.line !== "" && row.stakeReal && row.stakeReal !== "0") {
+                            row.eval = shortFormResult;
+                            calculatePlReal(row);
+                        } 
+                        else if (row.type === "M" && (row.line === "" || !row.line) && row.stakeReal && row.stakeReal !== "0") {
+                            const siblingEvents = currentRows.filter(r => r.id === row.id && r.home !== "" && r.line !== "");
+                            const allEvaluated = siblingEvents.every(r => r.eval && r.eval !== "pen");
+                            const hasALoss = siblingEvents.some(r => r.eval === "L");
+
+                            if (allEvaluated) {
+                                row.eval = hasALoss ? "L" : "W";
+                                calculatePlReal(row);
+                            } else if (hasALoss) {
+                                row.eval = "L";
+                                calculatePlReal(row);
+                            } else {
+                                row.eval = "pen";
+                                row.plReal = 0;
+                            }
+                        }
+                    }
+                });
+            }
+        });
+    }
+
+    // NEW Step 4: Re-calculate Client-level Totals for the Cache
+    if (currentEventData && currentEventData.results) {
+        currentEventData.results.forEach(idGroup => {
+            let totalStake = 0;
+            let totalPending = 0;
+            let totalPl = 0;
+
+            if (idGroup.rows && Array.isArray(idGroup.rows)) {
+                idGroup.rows.forEach(row => {
+                    // We only aggregate rows that carry the stake (usually type "" or type "M" summary row)
+                    // If your data structure has stakes on every row, adjust logic here
+                    if (row.stakeReal && row.stakeReal !== "0" && (row.type === "" || row.type === "M") && (row.line === "" || row.type === "")) {
+                        const s = parseFloat(row.stakeReal) || 0;
+                        const p = parseFloat(row.plReal) || 0;
+
+                        totalStake += s;
+                        
+                        if (row.eval === "pen") {
+                            totalPending += s;
+                        } else {
+                            totalPl += p;
+                        }
+                    }
+                });
+            }
+
+            // Update the idGroup properties (the columns in your Client List table)
+            idGroup.clientStake = totalStake.toFixed(2);
+            idGroup.clientPendingStake = totalPending.toFixed(2);
+            idGroup.clientPl = totalPl.toFixed(2);
+
+            console.log(idGroup);
+        });
+    }
+
+    // Helper to keep code clean
+    function calculatePlReal(row) {
+        const stake = parseFloat(row.stakeReal);
+        const odd = parseFloat(row.odd);
+        if (row.eval === "L") {
+            row.plReal = -1 * stake;
+        } else if (row.eval === "W") {
+            row.plReal = ((odd * stake) - stake).toFixed(2);
+        } else {
+            row.plReal = 0;
         }
+    }
+
+    // Finalize Caching
+    localStorage.setItem('eventsWithResults', JSON.stringify(eventsWithResults));
+    localStorage.setItem('fullEventDataCache', JSON.stringify(currentEventData));
+
+    closeModal();
+    initDashboard();
+}
 
         function closeModal() { document.getElementById('editModal').style.display = 'none'; }
 
         function renderClientList(data) {
             const tableBody = document.querySelector("#clientList tbody");
             tableBody.innerHTML = data.results.map((id, index) => {
-                // Only make clickable if pending stake > 0
                 const isClickable = parseFloat(id.clientPendingStake) !== 0;
                 const clickHandler = isClickable ? `onclick='openClientModal(${JSON.stringify(id.uniqueEvents2).replace(/'/g, "&apos;")}, "${id.id}")'` : "";
 
@@ -708,7 +838,6 @@
             </div>
         `).join('');
             }
-
             document.getElementById('clientEventsModal').style.display = 'flex';
         }
 
@@ -716,7 +845,6 @@
             document.getElementById('clientEventsModal').style.display = 'none';
         }
 
-        // Update your global window click handler to close this modal too
         window.onclick = (e) => {
             if (e.target.id === 'editModal') closeModal();
             if (e.target.id === 'clientEventsModal') closeClientModal();
@@ -822,7 +950,6 @@
                 }
             });
         }
-        window.onclick = (e) => { if (e.target.id === 'editModal') closeModal(); };
         window.onload = initDashboard;
     </script>
 </body>
