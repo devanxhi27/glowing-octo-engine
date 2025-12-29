@@ -72,6 +72,7 @@
             max-height: 600px;
             overflow-y: auto;
             box-sizing: border-box;
+            position: relative;
         }
 
         .sim-card h1 {
@@ -81,7 +82,26 @@
             color: var(--accent-cyan);
         }
 
-        /* --- STYLING FOR CLIENT SIMULATIONS TABLE --- */
+        /* NEW CLEAR BUTTON STYLING */
+        #clearCacheBtn {
+            background: rgba(255, 0, 127, 0.15);
+            color: var(--accent-pink);
+            border: 1px solid var(--accent-pink);
+            padding: 4px 10px;
+            border-radius: 6px;
+            font-size: 0.7rem;
+            cursor: pointer;
+            position: absolute;
+            top: 25px;
+            right: 25px;
+            transition: all 0.2s;
+        }
+
+        #clearCacheBtn:hover {
+            background: var(--accent-pink);
+            color: white;
+        }
+
         #clientList {
             width: 100%;
         }
@@ -129,20 +149,6 @@
             border-color: var(--accent-pink);
         }
 
-        .status-pill {
-            padding: 4px 8px;
-            border-radius: 6px;
-            font-size: 0.7rem;
-            font-weight: 700;
-            text-align: center;
-            display: inline-block;
-            min-width: 50px;
-        }
-        .status-win { background: rgba(0, 255, 242, 0.2); color: var(--accent-cyan); border: 1px solid var(--accent-cyan); }
-        .status-loss { background: rgba(255, 0, 127, 0.2); color: var(--accent-pink); border: 1px solid var(--accent-pink); }
-        .status-pending { background: rgba(255, 255, 255, 0.1); color: #ccc; border: 1px solid #555; }
-
-        /* Event Card with Edit Button */
         .event-card {
             background: rgba(255, 255, 255, 0.05);
             margin-bottom: 10px;
@@ -155,15 +161,9 @@
             align-items: center;
         }
 
-        .event-card:hover {
-            background: rgba(255, 255, 255, 0.12);
-            border-color: var(--accent-pink);
-        }
-
         .event-info {
             flex-grow: 1;
             text-align: left;
-            margin-right: 10px;
         }
 
         .event-info a {
@@ -171,6 +171,13 @@
             text-decoration: none;
             font-weight: 500;
             font-size: 0.9rem;
+        }
+
+        .event-result-text {
+            font-size: 0.8rem;
+            font-weight: 700;
+            margin-right: 12px;
+            text-transform: uppercase;
         }
 
         .edit-btn {
@@ -183,14 +190,8 @@
             font-weight: 600;
             cursor: pointer;
             font-size: 0.8rem;
-            transition: opacity 0.2s;
         }
 
-        .edit-btn:hover {
-            opacity: 0.8;
-        }
-
-        /* MODAL STYLING */
         .modal-overlay {
             position: fixed;
             top: 0;
@@ -213,19 +214,6 @@
             width: 90%;
             max-width: 400px;
             text-align: center;
-            box-shadow: 0 0 30px rgba(0, 255, 242, 0.2);
-        }
-
-        .modal-header {
-            font-weight: 700;
-            margin-bottom: 5px;
-            color: var(--accent-cyan);
-        }
-
-        .modal-subheader {
-            font-size: 0.8rem;
-            opacity: 0.7;
-            margin-bottom: 20px;
         }
 
         .input-group {
@@ -241,12 +229,6 @@
             flex-direction: column;
         }
 
-        .input-field label {
-            font-size: 0.75rem;
-            margin-bottom: 5px;
-            opacity: 0.8;
-        }
-
         .input-field input {
             background: rgba(255, 255, 255, 0.1);
             border: 1px solid rgba(255, 255, 255, 0.2);
@@ -254,12 +236,6 @@
             color: white;
             border-radius: 8px;
             text-align: center;
-            font-family: inherit;
-        }
-
-        .modal-actions {
-            display: flex;
-            gap: 10px;
         }
 
         .btn {
@@ -270,11 +246,6 @@
             font-family: inherit;
             font-weight: 600;
             cursor: pointer;
-            transition: transform 0.1s;
-        }
-
-        .btn:active {
-            transform: scale(0.98);
         }
 
         .btn-apply {
@@ -287,49 +258,140 @@
             color: white;
         }
 
+        .status-win {
+            background: rgba(0, 255, 242, 0.2);
+            color: var(--accent-cyan);
+            border: 1px solid var(--accent-cyan);
+        }
+
+        .status-loss {
+            background: rgba(255, 0, 127, 0.2);
+            color: var(--accent-pink);
+            border: 1px solid var(--accent-pink);
+        }
+
+        .status-pending {
+            background: rgba(255, 255, 255, 0.1);
+            color: #ccc;
+            border: 1px solid #555;
+        }
+
         .evaluation-box {
             margin-bottom: 20px;
             padding: 15px;
-            background: rgba(255,255,255,0.05);
+            background: rgba(255, 255, 255, 0.05);
             border-radius: 12px;
+        }
+
+        .eval-status {
+            padding: 5px;
+            border-radius: 5px;
+            font-weight: bold;
         }
 
         .corner-widget {
             position: fixed;
-            bottom: 20px;
-            right: 25px;
+            bottom: 15px;
+            right: 20px;
             display: flex;
             flex-direction: column;
             align-items: center;
             opacity: 0.45;
-            transition: opacity 0.25s ease, transform 0.25s ease;
             cursor: pointer;
-            z-index: 999;
-        }
-
-        .corner-widget:hover {
-            opacity: 1;
-            transform: translateY(-3px);
         }
 
         .corner-icon {
             width: 38px;
             height: 38px;
-            filter: brightness(0) invert(1); /* makes it white-ish */
-            opacity: 0.8;
-            transition: opacity 0.25s ease;
-        }
-
-        .corner-widget:hover .corner-icon {
-            opacity: 1;
+            filter: brightness(0) invert(1);
         }
 
         .corner-text {
             margin-top: 4px;
             font-size: 0.9rem;
-            color: rgba(255,255,255,0.8);
-            letter-spacing: 0.5px;
-            user-select: none;
+            color: rgba(255, 255, 255, 0.8);
+        }
+
+        #clientList tbody tr {
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+
+        .client-event-item {
+            background: rgba(255, 255, 255, 0.05);
+            padding: 10px;
+            border-radius: 8px;
+            margin-bottom: 8px;
+            font-size: 0.85rem;
+            border: 1px solid var(--glass-border);
+        }
+
+        /* MOBILE RESPONSIVENESS - Added without changing original desktop styles */
+        @media (max-width: 768px) {
+            body {
+                padding: 20px 10px; /* Reduced outer padding */
+            }
+
+            .container {
+                gap: 15px;
+            }
+
+            .chart-card {
+                height: 300px; /* Shorter chart for small screens */
+                padding: 15px;
+            }
+
+            .simulation-row {
+                flex-direction: column; /* Stacks the two cards vertically */
+            }
+
+            .sim-card {
+                min-width: 100%;
+                padding: 15px;
+            }
+
+            .sim-card h1 {
+                font-size: 1.1rem;
+            }
+
+            /* Makes the table scrollable horizontally on small phones */
+            #clientList {
+                overflow-x: auto;
+                -webkit-overflow-scrolling: touch;
+            }
+
+            table {
+                min-width: 500px; /* Prevents text from squishing too much */
+            }
+
+            .event-card {
+                padding: 10px;
+                flex-wrap: wrap; /* Allows button to move below text if needed */
+                gap: 10px;
+            }
+
+            .event-info a {
+                font-size: 0.8rem;
+            }
+
+            /* Adjusts input fields so they are easier to tap on mobile */
+            .input-field input {
+                font-size: 16px; /* Prevents iOS auto-zoom on focus */
+                padding: 12px 5px;
+            }
+
+            /* Corner widget adjustment for thumb reach */
+            .corner-widget {
+                bottom: 10px;
+                right: 10px;
+                opacity: 0.8; /* Slightly more visible on mobile */
+            }
+            
+            #clearCacheBtn {
+                top: 15px;
+                right: 15px;
+                padding: 6px 8px;
+            }
         }
     </style>
 </head>
@@ -342,7 +404,7 @@
 
         <div class="simulation-row">
             <div class="sim-card" id="weekContainer">
-                <h1>Pending Events</h1>
+                <h1 id="pendingHeader">Pending Events</h1>
                 <div id="weekList"></div>
             </div>
             <div class="sim-card" id="clientContainer">
@@ -365,8 +427,7 @@
 
         <a href="./clients.html">
             <div class="corner-widget">
-        
-                <img class="corner-icon" src="public\images\home-17-svgrepo-com.svg" alt="home Icon">
+                <img class="corner-icon" src="public/images/home-17-svgrepo-com.svg" alt="home Icon">
                 <span class="corner-text">Home</span>
             </div>
         </a>
@@ -374,16 +435,18 @@
 
     <div class="modal-overlay" id="editModal">
         <div class="modal-content">
-            <div class="modal-header" id="modalTitle">Match Name</div>
-            <div class="modal-line-info" id="modalMarket">Line: home_0.5</div>
+            <div class="modal-header" id="modalTitle" style="color: var(--accent-cyan); font-weight:700;">Match Name
+            </div>
+            <div class="modal-line-info" id="modalMarket" style="font-size:0.8rem; margin-bottom:20px; opacity:0.7;">
+                Line: home_0.5</div>
 
             <div class="input-group">
                 <div class="input-field">
-                    <label>Home Score</label>
+                    <label style="font-size:0.75rem; margin-bottom:5px;">Home Score</label>
                     <input type="number" id="homeScore" placeholder="0" oninput="updateEvaluation()">
                 </div>
                 <div class="input-field">
-                    <label>Away Score</label>
+                    <label style="font-size:0.75rem; margin-bottom:5px;">Away Score</label>
                     <input type="number" id="awayScore" placeholder="0" oninput="updateEvaluation()">
                 </div>
             </div>
@@ -393,10 +456,20 @@
                 <div id="evaluationResult" class="eval-status status-pending">Enter Scores</div>
             </div>
 
-            <div class="modal-actions">
+            <div style="display: flex; gap: 10px;">
                 <button class="btn btn-close" onclick="closeModal()">Close</button>
                 <button class="btn btn-apply" onclick="applyEdit()">Apply Result</button>
             </div>
+        </div>
+    </div>
+
+    <div class="modal-overlay" id="clientEventsModal">
+        <div class="modal-content" style="max-width: 500px;">
+            <div class="modal-header" id="clientModalTitle" style="color: var(--accent-cyan); font-weight:700;">Client
+                Events</div>
+            <div id="clientEventsList" style="margin: 20px 0; max-height: 300px; overflow-y: auto; text-align: left;">
+            </div>
+            <button class="btn btn-close" onclick="closeClientModal()">Close</button>
         </div>
     </div>
 
@@ -405,6 +478,10 @@
         const FETCH_OPTIONS = { headers: { "ngrok-skip-browser-warning": "true", "Accept": "application/json" } };
         let myChart = null;
         let activeLine = "";
+        let activeFullEvent = "";
+
+        // Cache initialization
+        let eventsWithResults = JSON.parse(localStorage.getItem('eventsWithResults')) || {};
 
         async function initDashboard() {
             try {
@@ -412,12 +489,238 @@
                     fetch(`${API_BASE}/main-page-data`, FETCH_OPTIONS),
                     fetch(`${API_BASE}/pending-events`, FETCH_OPTIONS)
                 ]);
-                let eventsRes = await eRes.json();
-                renderChart(await cRes.json());
-                renderWeekList(eventsRes);
-                renderClientList(eventsRes);
+                const clientData = await cRes.json();
+                const eventData = await eRes.json();
+
+                renderChart(clientData);
+                renderWeekList(eventData);
+                renderClientList(eventData);
+                handleClearButtonVisibility();
+                document.querySelector(".corner-text").innerText = "Last Update: " + eventData.lastUpdate;
             } catch (err) { console.error(err); }
         }
+
+        function handleEventClick(url) {
+            if (!url || url.trim() === "") {
+                alert("We couldn't find this event in our records, therefore we cant redirect you to it.");
+            } else {
+                window.open(url, '_blank');
+            }
+        }
+
+        function renderWeekList(data) {
+            const list = document.getElementById('weekList');
+            list.innerHTML = data.uniqueEvents.map((event) => {
+                const saved = eventsWithResults[event];
+                let resultHtml = "";
+
+                if (saved) {
+                    const color = saved.result === "WIN" ? "var(--accent-cyan)" :
+                        saved.result === "LOSS" ? "var(--accent-pink)" : "#ccc";
+                    resultHtml = `<span class="event-result-text" style="color: ${color}">${saved.result} (${saved.score})</span>`;
+                }
+
+                return `
+                    <div class="event-card">
+                        <div class="event-info">
+                           <a href="javascript:void(0)" onclick="handleEventClick('${data.uniqueEventsWithLinks[event]?.league?.url || ""}')">${event}</a>
+                        </div>
+                        <div style="display: flex; align-items: center;">
+                            ${resultHtml}
+                            <button class="edit-btn" onclick="openModal('${event.replace(/'/g, "\\'")}')">Edit</button>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+        }
+
+        function handleClearButtonVisibility() {
+            let btn = document.getElementById('clearCacheBtn');
+            const hasCache = Object.keys(eventsWithResults).length > 0;
+
+            if (hasCache && !btn) {
+                btn = document.createElement('button');
+                btn.id = 'clearCacheBtn';
+                btn.innerText = 'Clear Results';
+                btn.onclick = clearCache;
+                document.getElementById('weekContainer').appendChild(btn);
+            } else if (!hasCache && btn) {
+                btn.remove();
+            }
+        }
+
+        function clearCache() {
+            if (confirm("Delete all saved results?")) {
+                eventsWithResults = {};
+                localStorage.removeItem('eventsWithResults');
+                initDashboard();
+            }
+        }
+
+        function openModal(fullEventString) {
+            activeFullEvent = fullEventString;
+            const parts = fullEventString.split(": ");
+            activeLine = parts[1] || "";
+
+            document.getElementById('modalTitle').innerText = parts[0];
+            document.getElementById('modalMarket').innerText = `Line: ${activeLine}`;
+
+            const saved = eventsWithResults[fullEventString];
+            if (saved) {
+                const scores = saved.score.split('-');
+                document.getElementById('homeScore').value = scores[0];
+                document.getElementById('awayScore').value = scores[1];
+            } else {
+                document.getElementById('homeScore').value = "";
+                document.getElementById('awayScore').value = "";
+            }
+
+            updateEvaluation();
+            document.getElementById('editModal').style.display = 'flex';
+        }
+
+        function updateEvaluation() {
+            const h = parseFloat(document.getElementById('homeScore').value);
+            const a = parseFloat(document.getElementById('awayScore').value);
+            const display = document.getElementById('evaluationResult');
+
+            if (isNaN(h) || isNaN(a)) {
+                display.innerText = "Enter Result";
+                display.className = "eval-status status-pending";
+                return;
+            }
+
+            const isWin = evaluateBet(h, a, activeLine);
+
+            if (isWin === true) {
+                display.innerText = "WIN";
+                display.className = "eval-status status-win";
+            } else if (isWin === false) {
+                display.innerText = "LOSS";
+                display.className = "eval-status status-loss";
+            } else {
+                // This handles Asian Handicaps where the score lands exactly on the line
+                display.innerText = "VOID / PUSH";
+                display.className = "eval-status status-pending";
+            }
+        }
+
+        function evaluateBet(h, a, line) {
+            if (!line) return null;
+            const l = line.toLowerCase();
+            const parts = l.split('_'); // e.g., ["corn", "over", "10.5"] or ["home", "2"]
+
+            // 1. Simple Win/Loss (home or away)
+            if (l === "home") return h > a;
+            if (l === "away") return a > h;
+
+            // 2. Corner/Card specific logic (e.g., corn_over_10.5, card_over_4.5)
+            // We treat 'h' and 'a' as whatever the metric is
+            if (l.includes('over') || l.includes('under')) {
+                const isOver = l.includes('over');
+                const isUnder = l.includes('under');
+
+                // Find the numeric value in the parts (usually the last or second to last)
+                const v = parseFloat(parts.find(p => !isNaN(parseFloat(p))));
+                const total = h + a;
+
+                // Special case: corn_over_2.5_home (only count home team)
+                if (l.includes('home')) {
+                    return isOver ? h > v : h < v;
+                }
+                // Special case: corn_over_2.5_away (only count away team)
+                if (l.includes('away')) {
+                    return isOver ? a > v : a < v;
+                }
+
+                // Standard Over/Under (Total)
+                if (total === v) return null; // Void/Push for whole numbers
+                return isOver ? total > v : total < v;
+            }
+
+            // 3. Asian Handicap / Goal Lines (e.g., home_2, away_-0.5)
+            if (parts[0] === 'home' || parts[0] === 'away') {
+                const v = parseFloat(parts[1]);
+                if (parts[0] === 'home') {
+                    const result = h + v;
+                    if (result === a) return null; // Push
+                    return result > a;
+                }
+                if (parts[0] === 'away') {
+                    const result = a + v;
+                    if (result === h) return null; // Push
+                    return result > h;
+                }
+            }
+
+            return null;
+        }
+
+        function applyEdit() {
+            const h = document.getElementById('homeScore').value;
+            const a = document.getElementById('awayScore').value;
+            const resText = document.getElementById('evaluationResult').innerText;
+
+            if (h === "" || a === "") return;
+
+            eventsWithResults[activeFullEvent] = {
+                score: `${h}-${a}`,
+                result: resText
+            };
+
+            localStorage.setItem('eventsWithResults', JSON.stringify(eventsWithResults));
+            closeModal();
+            initDashboard();
+        }
+
+        function closeModal() { document.getElementById('editModal').style.display = 'none'; }
+
+        function renderClientList(data) {
+            const tableBody = document.querySelector("#clientList tbody");
+            tableBody.innerHTML = data.results.map((id, index) => {
+                // Only make clickable if pending stake > 0
+                const isClickable = parseFloat(id.clientPendingStake) !== 0;
+                const clickHandler = isClickable ? `onclick='openClientModal(${JSON.stringify(id.uniqueEvents2).replace(/'/g, "&apos;")}, "${id.id}")'` : "";
+
+                return `
+            <tr ${clickHandler} style="${isClickable ? '' : 'cursor: default;'}">
+                <td>${id.id}</td>
+                <td>€${id.clientStake}</td>
+                <td>€${id.clientPl}</td>
+                <td style="${isClickable ? 'color: var(--accent-cyan); font-weight: bold;' : ''}">
+                    €${id.clientPendingStake}
+                </td>
+            </tr>
+        `;
+            }).join('');
+        }
+
+        function openClientModal(events, clientId) {
+            const listContainer = document.getElementById('clientEventsList');
+            document.getElementById('clientModalTitle').innerText = `Pending for: ${clientId}`;
+
+            if (!events || events.length === 0) {
+                listContainer.innerHTML = "<p style='text-align:center; opacity:0.5;'>No events found.</p>";
+            } else {
+                listContainer.innerHTML = events.map(event => `
+            <div class="client-event-item">
+                ${event}
+            </div>
+        `).join('');
+            }
+
+            document.getElementById('clientEventsModal').style.display = 'flex';
+        }
+
+        function closeClientModal() {
+            document.getElementById('clientEventsModal').style.display = 'none';
+        }
+
+        // Update your global window click handler to close this modal too
+        window.onclick = (e) => {
+            if (e.target.id === 'editModal') closeModal();
+            if (e.target.id === 'clientEventsModal') closeClientModal();
+        };
 
         function renderChart(rawData) {
             const ctx = document.getElementById('unifiedChart').getContext('2d');
@@ -519,95 +822,9 @@
                 }
             });
         }
-
-        function renderWeekList(data) {
-            const list = document.getElementById('weekList');
-            list.innerHTML = data.uniqueEvents.map((event) => `
-                <div class="event-card">
-                    <div class="event-info"><a href="${data.uniqueEventsWithLinks[event].league.url}" target="_blank">${event}</a></div>
-                    <button class="edit-btn" onclick="openModal('${event.replace(/'/g, "\\'")}')">Edit</button>
-                </div>
-            `).join('');
-        }
-
-        function renderClientList(data) {
-            const tableBody = document.querySelector("#clientList tbody");
-            tableBody.innerHTML = ""; 
-
-            data.results.forEach(id => {
-                    let newTr = document.createElement("tr");
-                    newTr.innerHTML = `
-                        <td>${id.id}</td>
-                        <td>€${id.clientStake}</td>
-                        <td>€${id.clientPl}</td>
-                        <td>€${id.clientPendingStake}</td>
-                       
-                    `;
-                    tableBody.appendChild(newTr);
-            });
-        }
-
-        function openModal(fullEventString) {
-            const parts = fullEventString.split(": ");
-            const matchName = parts[0];
-            activeLine = parts[1] || "";
-
-            document.getElementById('modalTitle').innerText = matchName;
-            document.getElementById('modalMarket').innerText = `Line: ${activeLine}`;
-            document.getElementById('homeScore').value = "";
-            document.getElementById('awayScore').value = "";
-            document.getElementById('evaluationResult').innerText = "Enter Scores";
-            document.getElementById('evaluationResult').className = "eval-status status-pending";
-            document.getElementById('editModal').style.display = 'flex';
-        }
-
-        function updateEvaluation() {
-            const h = parseFloat(document.getElementById('homeScore').value);
-            const a = parseFloat(document.getElementById('awayScore').value);
-            const display = document.getElementById('evaluationResult');
-
-            if (isNaN(h) || isNaN(a)) {
-                display.innerText = "Enter Scores";
-                display.className = "eval-status status-pending";
-                return;
-            }
-
-            const isWin = evaluateBet(h, a, activeLine);
-
-            if (isWin === true) {
-                display.innerText = "WIN";
-                display.className = "eval-status status-win";
-            } else if (isWin === false) {
-                display.innerText = "LOSS";
-                display.className = "eval-status status-loss";
-            } else {
-                display.innerText = "VOID / DRAW";
-                display.className = "eval-status status-pending";
-            }
-        }
-
-        function evaluateBet(homeGoals, awayGoals, lineStr) {
-            if (!lineStr) return null;
-            if (lineStr.toLowerCase() == "home") return homeGoals > awayGoals;
-            if (lineStr.toLowerCase() == "away") return awayGoals > homeGoals;
-            
-            const [type, valueStr] = lineStr.split('_');
-            const lineVal = parseFloat(valueStr);
-
-            switch (type.toLowerCase()) {
-                case 'home': return (homeGoals + lineVal) > awayGoals;
-                case 'away': return (awayGoals + lineVal) > homeGoals;
-                case 'over': return (homeGoals + awayGoals) > lineVal;
-                case 'under': return (homeGoals + awayGoals) < lineVal;
-                default: return null;
-            }
-        }
-
-        function closeModal() { document.getElementById('editModal').style.display = 'none'; }
-        function applyEdit() { alert("Result Saved!"); closeModal(); }
-
         window.onclick = (e) => { if (e.target.id === 'editModal') closeModal(); };
         window.onload = initDashboard;
     </script>
 </body>
+
 </html>
