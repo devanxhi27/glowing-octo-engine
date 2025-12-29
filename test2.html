@@ -698,22 +698,22 @@ function applyEdit() {
     }
 
     // Step 2: Update individual event rows first
-    if (currentEventData && currentEventData.results) {
-        currentEventData.results.forEach(idGroup => {
-            if (idGroup.rows && Array.isArray(idGroup.rows)) {
-                idGroup.rows.forEach(row => {
-                    if (matchingIds.includes(row.id)) {
-                        if (row.home && row.home !== "" && row.line && row.line !== "") {
-                            let eventStr = row.home + " vs " + row.away + ": " + row.line;
-                            if (eventStr === activeFullEvent) {
-                                row.eval = shortFormResult;
-                            }
-                        }
-                    }
-                });
-            }
-        });
-    }
+    // if (currentEventData && currentEventData.results) {
+    //     currentEventData.results.forEach(idGroup => {
+    //         if (idGroup.rows && Array.isArray(idGroup.rows)) {
+    //             idGroup.rows.forEach(row => {
+    //                 if (matchingIds.includes(row.id)) {
+    //                     if (row.home && row.home !== "" && row.line && row.line !== "") {
+    //                         let eventStr = row.home + " vs " + row.away + ": " + row.line;
+    //                         if (eventStr === activeFullEvent) {
+    //                             row.eval = shortFormResult;
+    //                         }
+    //                     }
+    //                 }
+    //             });
+    //         }
+    //     });
+    // }
 
     // Step 3: Evaluate the Main Row (Type "" or Type "M")
     if (currentEventData && currentEventData.results) {
@@ -722,7 +722,7 @@ function applyEdit() {
                 const currentRows = idGroup.rows;
                 currentRows.forEach(row => {
                     if (matchingIds.includes(row.id)) {
-                        if (row.type === "" && row.line !== "" && row.stakeReal && row.stakeReal !== "0") {
+                        if (row.type === "" && row.stakeReal && row.stakeReal !== "0") {
                             row.eval = shortFormResult;
                             calculatePlReal(row);
                         } 
