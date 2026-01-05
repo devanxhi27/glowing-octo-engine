@@ -528,8 +528,8 @@
                 let resultHtml = "";
 
                 if (saved) {
-                    const color = saved.result === "WIN" ? "var(--accent-cyan)" :
-                        saved.result === "LOSS" ? "var(--accent-pink)" : "#ccc";
+                    const color = saved.result === "WIN" || saved.result === "1/2 WIN" ? "var(--accent-cyan)" :
+                        saved.result === "LOSS" || saved.result === "1/2 LOSE" ? "var(--accent-pink)" : "#ccc";
                     resultHtml = `<span class="event-result-text" style="color: ${color}">${saved.result} (${saved.score})</span>`;
                 }
 
@@ -607,14 +607,20 @@
             const isWin = evaluateBet(h, a, activeLine);
             let originalLineMarket = ((activeLine.toLowerCase().includes("corn"))?"CORNERS":((activeLine.toLowerCase().includes("card"))?"CARDS":"GOALS"));
 
-            if (isWin === true) {
+             if (isWin === true) {
                 display.innerText = "WIN";
                 display.className = "eval-status status-win";
             } else if (isWin === false) {
                 display.innerText = "LOSS";
                 display.className = "eval-status status-loss";
+            } else if (isWin === "half-lose") {
+                display.innerText = "1/2 LOSE";
+                display.className = "eval-status status-loss";
+            } else if (isWin === "half-win") {
+                display.innerText = "1/2 WIN";
+                display.className = "eval-status status-win";
             } else {
-                display.innerText = "VOID / PUSH";
+                display.innerText = "VOID";
                 display.className = "eval-status status-pending";
             }
             
@@ -636,8 +642,14 @@
                                 } else if (isWin === false) {
                                     display.innerText = "LOSS";
                                     display.className = "eval-status status-loss";
+                                } else if (isWin == "half-lose") {
+                                    display.innerText = "1/2 LOSE";
+                                    display.className = "eval-status status-loss";
+                                } else if (isWin == "half-win") {
+                                    display.innerText = "1/2 WIN";
+                                    display.className = "eval-status status-win";
                                 } else {
-                                    display.innerText = "VOID / PUSH";
+                                    display.innerText = "VOID";
                                     display.className = "eval-status status-pending";
                                 }
                                 document.getElementById('modalMarket').innerText = `Line: ${activeLine}`;
@@ -702,165 +714,177 @@
                 if (parts[0] === 'home') {
                     const result = h + v;
                     if (result === a) return null;
-                    return result > a;
+                    if (result - h == 0.25) return "half-win";
+                    if (result - h == -0.25) return "half-lose";
+                    return result - h > 0.25;
                 }
                 if (parts[0] === 'away') {
-                    console.log("Handicap away", parts, a, v, a + v)
+                    // console.log("Handicap away", parts, a, v, a + v)
                     const result = a + v;
                     if (result === h) return null;
-                    return result > h;
+                    if (result - a == 0.25) return "half-win";
+                    if (result - a == -0.25) return "half-lose";
+                    return result - a > 0.25;
                 }
             }
             return null;
         }
 
-function applyEdit() {
-    const h = document.getElementById('homeScore').value;
-    const a = document.getElementById('awayScore').value;
-    const resText = document.getElementById('evaluationResult').innerText;
+        function applyEdit() {
+            const h = document.getElementById('homeScore').value;
+            const a = document.getElementById('awayScore').value;
+            const resText = document.getElementById('evaluationResult').innerText;
 
-    if (h === "" || a === "") return;
+            if (h === "" || a === "") return;
 
-    let shortFormResult = "pen";
-    if (resText === "WIN") {
-        shortFormResult = "W";
-    } else if (resText === "LOSS") {
-        shortFormResult = "L";
-    } else if (resText === "VOID / PUSH") {
-        shortFormResult = "V";
-    }
+            let shortFormResult = "pen";
+            if (resText === "WIN") {
+                shortFormResult = "W";
+            } else if (resText === "LOSS") {
+                shortFormResult = "L";
+            } else if (resText === "VOID") {
+                shortFormResult = "V";
+            } else if (resText === "1/2 WIN") {
+                shortFormResult = "W1/2";
+            } else if (resText === "1/2 LOSE") {
+                shortFormResult = "L1/2";
+            }
 
-    eventsWithResults[activeFullEvent] = {
-        score: `${h}-${a}`,
-        result: resText
-    };
+            eventsWithResults[activeFullEvent] = {
+                score: `${h}-${a}`,
+                result: resText
+            };
 
-    let matchingIds = [];
+            let matchingIds = [];
 
-    // Step 1: Identify which IDs are affected by this event
-    if (currentEventData && currentEventData.results) {
-        currentEventData.results.forEach(idGroup => {
-            if (idGroup.rows && Array.isArray(idGroup.rows)) {
-                idGroup.rows.forEach(row => {
-                    if (row.home && row.home !== "" && row.line && row.line !== "") {
-                        let eventStr = row.home + " vs " + row.away + ": " + row.line;
-                        if (eventStr === activeFullEvent) {
-                            if (row.id && row.id !== "" && !matchingIds.includes(row.id)) {
-                                matchingIds.push(row.id);
+            // Step 1: Identify which IDs are affected by this event
+            if (currentEventData && currentEventData.results) {
+                currentEventData.results.forEach(idGroup => {
+                    if (idGroup.rows && Array.isArray(idGroup.rows)) {
+                        idGroup.rows.forEach(row => {
+                            if (row.home && row.home !== "" && row.line && row.line !== "") {
+                                let eventStr = row.home + " vs " + row.away + ": " + row.line;
+                                if (eventStr === activeFullEvent) {
+                                    if (row.id && row.id !== "" && !matchingIds.includes(row.id)) {
+                                        matchingIds.push(row.id);
+                                    }
+                                }
                             }
-                        }
+                        });
                     }
                 });
             }
-        });
-    }
 
-    // Step 2: Update individual event rows first
-    // if (currentEventData && currentEventData.results) {
-    //     currentEventData.results.forEach(idGroup => {
-    //         if (idGroup.rows && Array.isArray(idGroup.rows)) {
-    //             idGroup.rows.forEach(row => {
-    //                 if (matchingIds.includes(row.id)) {
-    //                     if (row.home && row.home !== "" && row.line && row.line !== "") {
-    //                         let eventStr = row.home + " vs " + row.away + ": " + row.line;
-    //                         if (eventStr === activeFullEvent) {
-    //                             row.eval = shortFormResult;
-    //                         }
-    //                     }
-    //                 }
-    //             });
-    //         }
-    //     });
-    // }
+            // Step 2: Update individual event rows first
+            // if (currentEventData && currentEventData.results) {
+            //     currentEventData.results.forEach(idGroup => {
+            //         if (idGroup.rows && Array.isArray(idGroup.rows)) {
+            //             idGroup.rows.forEach(row => {
+            //                 if (matchingIds.includes(row.id)) {
+            //                     if (row.home && row.home !== "" && row.line && row.line !== "") {
+            //                         let eventStr = row.home + " vs " + row.away + ": " + row.line;
+            //                         if (eventStr === activeFullEvent) {
+            //                             row.eval = shortFormResult;
+            //                         }
+            //                     }
+            //                 }
+            //             });
+            //         }
+            //     });
+            // }
 
-    // Step 3: Evaluate the Main Row (Type "" or Type "M")
-    if (currentEventData && currentEventData.results) {
-        currentEventData.results.forEach(idGroup => {
-            if (idGroup.rows && Array.isArray(idGroup.rows)) {
-                const currentRows = idGroup.rows;
-                currentRows.forEach(row => {
-                    if (matchingIds.includes(row.id)) {
-                        if (row.type === "" && row.stakeReal && row.stakeReal !== "0") {
-                            row.eval = shortFormResult;
-                            calculatePlReal(row);
-                        } 
-                        else if (row.type === "M" && (row.line === "" || !row.line) && row.stakeReal && row.stakeReal !== "0") {
-                            const siblingEvents = currentRows.filter(r => r.id === row.id && r.home !== "" && r.line !== "");
-                            const allEvaluated = siblingEvents.every(r => r.eval && r.eval !== "pen");
-                            const hasALoss = siblingEvents.some(r => r.eval === "L");
+            // Step 3: Evaluate the Main Row (Type "" or Type "M")
+            if (currentEventData && currentEventData.results) {
+                currentEventData.results.forEach(idGroup => {
+                    if (idGroup.rows && Array.isArray(idGroup.rows)) {
+                        const currentRows = idGroup.rows;
+                        currentRows.forEach(row => {
+                            if (matchingIds.includes(row.id)) {
+                                if (row.type === "" && row.stakeReal && row.stakeReal !== "0") {
+                                    row.eval = shortFormResult;
+                                    calculatePlReal(row);
+                                } 
+                                else if (row.type === "M" && (row.line === "" || !row.line) && row.stakeReal && row.stakeReal !== "0") {
+                                    const siblingEvents = currentRows.filter(r => r.id === row.id && r.home !== "" && r.line !== "");
+                                    const allEvaluated = siblingEvents.every(r => r.eval && r.eval !== "pen");
+                                    const hasALoss = siblingEvents.some(r => r.eval === "L");
 
-                            if (allEvaluated) {
-                                row.eval = hasALoss ? "L" : "W";
-                                calculatePlReal(row);
-                            } else if (hasALoss) {
-                                row.eval = "L";
-                                calculatePlReal(row);
-                            } else {
-                                row.eval = "pen";
-                                row.plReal = 0;
+                                    if (allEvaluated) {
+                                        row.eval = hasALoss ? "L" : "W";
+                                        calculatePlReal(row);
+                                    } else if (hasALoss) {
+                                        row.eval = "L";
+                                        calculatePlReal(row);
+                                    } else {
+                                        row.eval = "pen";
+                                        row.plReal = 0;
+                                    }
+                                }
                             }
-                        }
-                    }
-                });
-            }
-        });
-    }
-
-    // NEW Step 4: Re-calculate Client-level Totals for the Cache
-    if (currentEventData && currentEventData.results) {
-        currentEventData.results.forEach(idGroup => {
-            let totalStake = 0;
-            let totalPending = 0;
-            let totalPl = 0;
-
-            if (idGroup.rows && Array.isArray(idGroup.rows)) {
-                idGroup.rows.forEach(row => {
-                    // We only aggregate rows that carry the stake (usually type "" or type "M" summary row)
-                    // If your data structure has stakes on every row, adjust logic here
-                    if (row.stakeReal && row.stakeReal !== "0" && (row.type === "" || row.type === "M") && (row.line === "" || row.type === "")) {
-                        const s = parseFloat(row.stakeReal) || 0;
-                        const p = parseFloat(row.plReal) || 0;
-
-                        totalStake += s;
-                        
-                        if (row.eval === "pen") {
-                            totalPending += s;
-                        } else {
-                            totalPl += p;
-                        }
+                        });
                     }
                 });
             }
 
-            // Update the idGroup properties (the columns in your Client List table)
-            idGroup.clientStake = totalStake.toFixed(2);
-            idGroup.clientPendingStake = totalPending.toFixed(2);
-            idGroup.clientPl = totalPl.toFixed(2);
+            // NEW Step 4: Re-calculate Client-level Totals for the Cache
+            if (currentEventData && currentEventData.results) {
+                currentEventData.results.forEach(idGroup => {
+                    let totalStake = 0;
+                    let totalPending = 0;
+                    let totalPl = 0;
 
-            console.log(idGroup);
-        });
-    }
+                    if (idGroup.rows && Array.isArray(idGroup.rows)) {
+                        idGroup.rows.forEach(row => {
+                            // We only aggregate rows that carry the stake (usually type "" or type "M" summary row)
+                            // If your data structure has stakes on every row, adjust logic here
+                            if (row.stakeReal && row.stakeReal !== "0" && (row.type === "" || row.type === "M") && (row.line === "" || row.type === "")) {
+                                const s = parseFloat(row.stakeReal) || 0;
+                                const p = parseFloat(row.plReal) || 0;
 
-    // Helper to keep code clean
-    function calculatePlReal(row) {
-        const stake = parseFloat(row.stakeReal);
-        const odd = parseFloat(row.odd);
-        if (row.eval === "L") {
-            row.plReal = -1 * stake;
-        } else if (row.eval === "W") {
-            row.plReal = ((odd * stake) - stake).toFixed(2);
-        } else {
-            row.plReal = 0;
+                                totalStake += s;
+                                
+                                if (row.eval === "pen") {
+                                    totalPending += s;
+                                } else {
+                                    totalPl += p;
+                                }
+                            }
+                        });
+                    }
+
+                    // Update the idGroup properties (the columns in your Client List table)
+                    idGroup.clientStake = totalStake.toFixed(2);
+                    idGroup.clientPendingStake = totalPending.toFixed(2);
+                    idGroup.clientPl = totalPl.toFixed(2);
+
+                    console.log(idGroup);
+                });
+            }
+
+            // Helper to keep code clean
+            function calculatePlReal(row) {
+                const stake = parseFloat(row.stakeReal);
+                const odd = parseFloat(row.odd);
+                if (row.eval === "L") {
+                    row.plReal = -1 * stake;
+                } else if (row.eval === "W") {
+                    row.plReal = ((odd * stake) - stake).toFixed(2);
+                } else if (row.eval === "W1/2") {
+                    row.plReal = (((odd * stake) / 2) - stake).toFixed(2);
+                } else if (row.eval === "L1/2") {
+                    row.plReal = (stake / 2) * -1;
+                } else {
+                    row.plReal = 0;
+                }
+            }
+
+            // Finalize Caching
+            localStorage.setItem('eventsWithResults', JSON.stringify(eventsWithResults));
+            localStorage.setItem('fullEventDataCache', JSON.stringify(currentEventData));
+
+            closeModal();
+            initDashboard();
         }
-    }
-
-    // Finalize Caching
-    localStorage.setItem('eventsWithResults', JSON.stringify(eventsWithResults));
-    localStorage.setItem('fullEventDataCache', JSON.stringify(currentEventData));
-
-    closeModal();
-    initDashboard();
-}
 
         function closeModal() { document.getElementById('editModal').style.display = 'none'; }
 
