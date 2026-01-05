@@ -715,17 +715,17 @@
                 if (parts[0] === 'home') {
                     const result = h + v;
                     if (result === a) return null;
-                    if (result - h == 0.25) return "half-win";
-                    if (result - h == -0.25) return "half-lose";
-                    return result - h > 0.25;
+                    if (result - a == 0.25) return "half-win";
+                    if (result - a == -0.25) return "half-lose";
+                    return result - a > 0.25;
                 }
                 if (parts[0] === 'away') {
                     // console.log("Handicap away", parts, a, v, a + v)
                     const result = a + v;
                     if (result === h) return null;
-                    if (result - a == 0.25) return "half-win";
-                    if (result - a == -0.25) return "half-lose";
-                    return result - a > 0.25;
+                    if (result - h == 0.25) return "half-win";
+                    if (result - h == -0.25) return "half-lose";
+                    return result - h > 0.25;
                 }
             }
             return null;
