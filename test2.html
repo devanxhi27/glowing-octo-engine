@@ -417,6 +417,7 @@
                                 <th>Stake</th>
                                 <th>PL</th>
                                 <th>Pending</th>
+                                <th>Simulation</th>
                             </tr>
                         </thead>
                         <tbody></tbody>
@@ -832,6 +833,8 @@
                     let totalStake = 0;
                     let totalPending = 0;
                     let totalPl = 0;
+                    let totalPlSimulation = 0;
+                    let totalStakeSimulation = 0;
 
                     if (idGroup.rows && Array.isArray(idGroup.rows)) {
                         idGroup.rows.forEach(row => {
@@ -840,13 +843,15 @@
                             if (row.stakeReal && row.stakeReal !== "0" && (row.type === "" || row.type === "M") && (row.line === "" || row.type === "")) {
                                 const s = parseFloat(row.stakeReal) || 0;
                                 const p = parseFloat(row.plReal) || 0;
+                                const pSim = parseFloat(row.plSimulation) || 0;
 
                                 totalStake += s;
-                                
+                                totalStakeSimulation += parseFloat(row.stakeSimulation) || 0;
                                 if (row.eval === "pen") {
                                     totalPending += s;
                                 } else {
                                     totalPl += p;
+                                    totalPlSimulation += pSim;
                                 }
                             }
                         });
@@ -856,6 +861,8 @@
                     idGroup.clientStake = totalStake.toFixed(2);
                     idGroup.clientPendingStake = totalPending.toFixed(2);
                     idGroup.clientPl = totalPl.toFixed(2);
+                    idGroup.clientPlSimulation = totalPlSimulation.toFixed(2);
+                    idGroup.clientStakeSimulation = totalStakeSimulation.toFixed(2);
 
                     console.log(idGroup);
                 });
@@ -865,16 +872,23 @@
             function calculatePlReal(row) {
                 const stake = parseFloat(row.stakeReal);
                 const odd = parseFloat(row.odd);
+                row.stakeSimulation = stake;
                 if (row.eval === "L") {
                     row.plReal = -1 * stake;
+                    row.plSimulation =  -1 * stake;
                 } else if (row.eval === "W") {
                     row.plReal = ((odd * stake) - stake).toFixed(2);
+                    row.plSimulation = ((odd * stake) - stake).toFixed(2);
                 } else if (row.eval === "W1/2") {
-                    row.plReal = (((odd * stake) / 2) - stake).toFixed(2);
+                    let newOdd = (odd - 1) / 2 + 1;
+                    row.plReal = ((newOdd * stake) - stake).toFixed(2);
+                    row.plSimulation = ((newOdd * stake) - stake).toFixed(2);
                 } else if (row.eval === "L1/2") {
                     row.plReal = (stake / 2) * -1;
+                    row.plSimulation = (stake / 2) * -1;
                 } else {
                     row.plReal = 0;
+                    row.plSimulation = 0;
                 }
             }
 
@@ -893,7 +907,10 @@
             tableBody.innerHTML = data.results.map((id, index) => {
                 const isClickable = parseFloat(id.clientPendingStake) !== 0;
                 const clickHandler = isClickable ? `onclick='openClientModal(${JSON.stringify(id.uniqueEvents2).replace(/'/g, "&apos;")}, "${id.id}")'` : "";
-
+                let clientPlSimulation = parseFloat(id.clientPlSimulation);
+                if (isNaN(clientPlSimulation)) clientPlSimulation = 0;
+                let isPositive = clientPlSimulation > 0;
+                clientPlSimulation = (isPositive ? "+" : "") + "€" + clientPlSimulation.toFixed(2); 
                 return `
             <tr ${clickHandler} style="${isClickable ? '' : 'cursor: default;'}">
                 <td>${id.id}</td>
@@ -901,6 +918,11 @@
                 <td>€${id.clientPl}</td>
                 <td style="${isClickable ? 'color: var(--accent-cyan); font-weight: bold;' : ''}">
                     €${id.clientPendingStake}
+                </td>
+                <td style="color: ${isPositive ? 'var(--accent-cyan)' : 'var(--accent-pink)'}; font-weight: bold;">
+                    ${clientPlSimulation}
+                    <br>
+                    <small style="color: #ccc;">Stake: ${id.clientStakeSimulation ?? 0}</small>
                 </td>
             </tr>
         `;
