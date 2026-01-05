@@ -605,6 +605,7 @@
             }
 
             const isWin = evaluateBet(h, a, activeLine);
+            let originalLineMarket = ((activeLine.toLowerCase().includes("corn"))?"CORNERS":((activeLine.toLowerCase().includes("card"))?"CARDS":"GOALS"));
 
             if (isWin === true) {
                 display.innerText = "WIN";
@@ -616,11 +617,67 @@
                 display.innerText = "VOID / PUSH";
                 display.className = "eval-status status-pending";
             }
+            
+            setTimeout(() => {
+                if (document.getElementById('editModal').style.display == 'none') {
+                    let eventString = document.getElementById('modalTitle').innerText;
+                    document.querySelectorAll(".event-info").forEach(itm => {
+                        let eventTitle = itm.innerText.split(": ")[0];
+                        activeFullEvent = itm.innerText;
+                        if (eventTitle === eventString) {
+                            activeLine = itm.innerText.split(": ")[1];
+                            let currentLineMarket = ((activeLine.toLowerCase().includes("corn"))?"CORNERS":((activeLine.toLowerCase().includes("card"))?"CARDS":"GOALS"));
+                            if (currentLineMarket === originalLineMarket) {
+                                const isWin = evaluateBet(h, a, activeLine);
+
+                                if (isWin === true) {
+                                    display.innerText = "WIN";
+                                    display.className = "eval-status status-win";
+                                } else if (isWin === false) {
+                                    display.innerText = "LOSS";
+                                    display.className = "eval-status status-loss";
+                                } else {
+                                    display.innerText = "VOID / PUSH";
+                                    display.className = "eval-status status-pending";
+                                }
+                                document.getElementById('modalMarket').innerText = `Line: ${activeLine}`;
+                                applyEdit();
+                                console.log("DONE WITH: " +  itm.innerText);
+                            }
+                        
+                        }
+                    });
+                }
+            }, 1000);
+            
+        }
+
+        function replaceCommonLineMiswritings(line)
+        {
+            let replacedLine = line;
+            if (line.includes("CORNER_HANDICAP AWAY")) {
+                return line.replace("CORNER_HANDICAP AWAY", "corn_away_");
+            } else if (line.includes("CORNER_HANDICAP HOME")) {
+                return line.replace("CORNER_HANDICAP HOME", "corn_home_");
+            } else {
+                return line;
+            }
         }
 
         function evaluateBet(h, a, ogLine) {
             if (!ogLine) return null;
-            let line = ogLine.replace("(", "").replace(")", "");
+            let replacedLine = replaceCommonLineMiswritings(ogLine);
+            if (replacedLine.includes("corn") || replacedLine.includes("card")) {
+                replacedLine = replacedLine.replace("corn_", "").replace("card_", "");
+            }
+            let currentMarketType = "Goals";
+            if (replacedLine.includes("corn")) {
+                currentMarketType = "Corners";
+            } else if (replacedLine.includes("card")) {
+                currentMarketType = "Cards";
+            }
+            console.log(replacedLine);
+            let line = replacedLine.replace("(", "").replace(")", "");
             const l = line.toLowerCase();
             const parts = l.split('_');
 
