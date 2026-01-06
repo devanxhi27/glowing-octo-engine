@@ -400,7 +400,7 @@
 
     <div class="container">
         <h2>Performance Analysis</h2>
-        <div class="chart-card"><canvas id="unifiedChart"></canvas></div>
+       
 
         <div class="simulation-row">
             <div class="sim-card" id="weekContainer">
@@ -425,6 +425,8 @@
                 </div>
             </div>
         </div>
+
+        <div class="chart-card"><canvas id="unifiedChart"></canvas></div>
 
         <a href="./clients.html">
             <div class="corner-widget">
@@ -475,7 +477,7 @@
     </div>
 
 <script>
-        const API_BASE = 'https://4751210766c8.ngrok-free.app';
+        const API_BASE = 'https://eagle-current-dinosaur.ngrok-free.app';
         const FETCH_OPTIONS = { headers: { "ngrok-skip-browser-warning": "true", "Accept": "application/json" } };
         let myChart = null;
         let activeLine = "";
@@ -708,7 +710,7 @@
                 return line.replace("TEAM_TOTAL_CARDS AWAY_UNDER", "card_away_under_");
             } else if (line.includes("TEAM_TOTAL_CARDS AWAY_OVER")) {
                 return line.replace("TEAM_TOTAL_CARDS AWAY_OVER", "card_away_over_");
-                
+
             } else {
                 return line;
             }
