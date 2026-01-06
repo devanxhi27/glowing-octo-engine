@@ -672,6 +672,43 @@
                 return line.replace("CORNER_HANDICAP AWAY", "corn_away_");
             } else if (line.includes("CORNER_HANDICAP HOME")) {
                 return line.replace("CORNER_HANDICAP HOME", "corn_home_");
+
+            } else if (line.includes("GAME_TOTAL_CORNERS UNDER")) {
+                return line.replace("GAME_TOTAL_CORNERS UNDER", "corn_under_");
+            } else if (line.includes("GAME_TOTAL_CORNERS OVER")) {
+                return line.replace("GAME_TOTAL_CORNERS OVER", "corn_over_");
+
+            } else if (line.includes("TEAM_TOTAL_CORNERS HOME_UNDER")) {
+                return line.replace("TEAM_TOTAL_CORNERS HOME_UNDER", "corn_home_under_");
+            } else if (line.includes("TEAM_TOTAL_CORNERS HOME_OVER")) {
+                return line.replace("TEAM_TOTAL_CORNERS HOME_OVER", "corn_home_over_");
+
+            } else if (line.includes("TEAM_TOTAL_CORNERS AWAY_UNDER")) {
+                return line.replace("TEAM_TOTAL_CORNERS AWAY_UNDER", "corn_away_under_");
+            } else if (line.includes("TEAM_TOTAL_CORNERS AWAY_OVER")) {
+                return line.replace("TEAM_TOTAL_CORNERS AWAY_OVER", "corn_away_over_");
+                
+
+            } else if (line.includes("CARD_HANDICAP AWAY")) {
+                return line.replace("CARD_HANDICAP AWAY", "card_away_");
+            } else if (line.includes("CARD_HANDICAP HOME")) {
+                return line.replace("CARD_HANDICAP HOME", "card_home_");
+
+            } else if (line.includes("GAME_TOTAL_CARDS UNDER")) {
+                return line.replace("GAME_TOTAL_CARDS UNDER", "card_under_");
+            } else if (line.includes("GAME_TOTAL_CARDS OVER")) {
+                return line.replace("GAME_TOTAL_CARDS OVER", "card_over_");
+
+            } else if (line.includes("TEAM_TOTAL_CARDS HOME_UNDER")) {
+                return line.replace("TEAM_TOTAL_CARDS HOME_UNDER", "card_home_under_");
+            } else if (line.includes("TEAM_TOTAL_CARDS HOME_OVER")) {
+                return line.replace("TEAM_TOTAL_CARDS HOME_OVER", "card_home_over_");
+
+            } else if (line.includes("TEAM_TOTAL_CARDS AWAY_UNDER")) {
+                return line.replace("TEAM_TOTAL_CARDS AWAY_UNDER", "card_away_under_");
+            } else if (line.includes("TEAM_TOTAL_CARDS AWAY_OVER")) {
+                return line.replace("TEAM_TOTAL_CARDS AWAY_OVER", "card_away_over_");
+                
             } else {
                 return line;
             }
