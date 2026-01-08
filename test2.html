@@ -408,7 +408,7 @@
                 <div id="weekList"></div>
             </div>
             <div class="sim-card" id="clientContainer">
-                <h1>Client Simulations</h1>
+                <!-- <h1>Client Simulations</h1> -->
                 <div id="clientList">
                     <table>
                         <thead>
@@ -597,75 +597,71 @@
         }
 
         function updateEvaluation() {
-            const h = parseFloat(document.getElementById('homeScore').value);
-            const a = parseFloat(document.getElementById('awayScore').value);
-            const display = document.getElementById('evaluationResult');
+    const h = parseFloat(document.getElementById('homeScore').value);
+    const a = parseFloat(document.getElementById('awayScore').value);
+    const display = document.getElementById('evaluationResult');
 
-            if (isNaN(h) || isNaN(a)) {
-                display.innerText = "Enter Result";
-                display.className = "eval-status status-pending";
-                return;
-            }
+    if (isNaN(h) || isNaN(a)) {
+        display.innerText = "Enter Result";
+        display.className = "eval-status status-pending";
+        return;
+    }
 
-            const isWin = evaluateBet(h, a, activeLine);
-            let originalLineMarket = ((activeLine.toLowerCase().includes("corn"))?"CORNERS":((activeLine.toLowerCase().includes("card"))?"CARDS":"GOALS"));
+    // Just update the modal UI for the current active item
+    const isWin = evaluateBet(h, a, activeLine);
+    
+    if (isWin === true) {
+        display.innerText = "WIN";
+        display.className = "eval-status status-win";
+    } else if (isWin === false) {
+        display.innerText = "LOSS";
+        display.className = "eval-status status-loss";
+    } else if (isWin === "half-lose") {
+        display.innerText = "1/2 LOSE";
+        display.className = "eval-status status-loss";
+    } else if (isWin === "half-win") {
+        display.innerText = "1/2 WIN";
+        display.className = "eval-status status-win";
+    } else {
+        display.innerText = "VOID";
+        display.className = "eval-status status-pending";
+    }
+}
 
-             if (isWin === true) {
-                display.innerText = "WIN";
-                display.className = "eval-status status-win";
-            } else if (isWin === false) {
-                display.innerText = "LOSS";
-                display.className = "eval-status status-loss";
-            } else if (isWin === "half-lose") {
-                display.innerText = "1/2 LOSE";
-                display.className = "eval-status status-loss";
-            } else if (isWin === "half-win") {
-                display.innerText = "1/2 WIN";
-                display.className = "eval-status status-win";
-            } else {
-                display.innerText = "VOID";
-                display.className = "eval-status status-pending";
-            }
-            
-            setTimeout(() => {
-                if (document.getElementById('editModal').style.display == 'none') {
-                    let eventString = document.getElementById('modalTitle').innerText;
-                    document.querySelectorAll(".event-info").forEach(itm => {
-                        let eventTitle = itm.innerText.split(": ")[0];
-                        activeFullEvent = itm.innerText;
-                        if (eventTitle === eventString) {
-                            activeLine = itm.innerText.split(": ")[1];
-                            let currentLineMarket = ((activeLine.toLowerCase().includes("corn"))?"CORNERS":((activeLine.toLowerCase().includes("card"))?"CARDS":"GOALS"));
-                            if (currentLineMarket === originalLineMarket) {
-                                const isWin = evaluateBet(h, a, activeLine);
+// Add this to your event listener for the Apply button
+document.querySelector('.btn-apply').addEventListener('click', function() {
+    const h = parseFloat(document.getElementById('homeScore').value);
+    const a = parseFloat(document.getElementById('awayScore').value);
+    if (isNaN(h) || isNaN(a)) return;
 
-                                if (isWin === true) {
-                                    display.innerText = "WIN";
-                                    display.className = "eval-status status-win";
-                                } else if (isWin === false) {
-                                    display.innerText = "LOSS";
-                                    display.className = "eval-status status-loss";
-                                } else if (isWin == "half-lose") {
-                                    display.innerText = "1/2 LOSE";
-                                    display.className = "eval-status status-loss";
-                                } else if (isWin == "half-win") {
-                                    display.innerText = "1/2 WIN";
-                                    display.className = "eval-status status-win";
-                                } else {
-                                    display.innerText = "VOID";
-                                    display.className = "eval-status status-pending";
-                                }
-                                document.getElementById('modalMarket').innerText = `Line: ${activeLine}`;
-                                applyEdit();
-                                console.log("DONE WITH: " +  itm.innerText);
-                            }
-                        
-                        }
-                    });
-                }
-            }, 1000);
-            
-        }
+    const eventString = document.getElementById('modalTitle').innerText;
+    const originalLineMarket = ((activeLine.toLowerCase().includes("corn")) ? "CORNERS" : ((activeLine.toLowerCase().includes("card")) ? "CARDS" : "GOALS"));
+
+    // Convert NodeList to Array and filter for matches first
+    const itemsToProcess = Array.from(document.querySelectorAll(".event-info")).filter(itm => {
+        let eventTitle = itm.innerText.split(": ")[0];
+        let itemLine = itm.innerText.split(": ")[1];
+        let currentLineMarket = ((itemLine.toLowerCase().includes("corn")) ? "CORNERS" : ((itemLine.toLowerCase().includes("card")) ? "CARDS" : "GOALS"));
+        
+        return (eventTitle === eventString && currentLineMarket === originalLineMarket);
+    });
+
+    // Loop through the filtered matches
+    itemsToProcess.forEach((itm, index) => {
+        // Update global variables for the current item in the loop
+        activeFullEvent = itm.innerText;
+        activeLine = itm.innerText.split(": ")[1];
+        
+        // Check if this is the last item in our filtered list
+        const isLastItem = (index === itemsToProcess.length - 1);
+
+        // Call applyEdit with the boolean flag
+        // If it's the last item, it passes true (to close modal), otherwise false
+        applyEdit(isLastItem);
+        
+        console.log(`Processed ${index + 1} of ${itemsToProcess.length}`);
+    });
+});
 
         function replaceCommonLineMiswritings(line)
         {
@@ -770,7 +766,7 @@
             return null;
         }
 
-        function applyEdit() {
+        function applyEdit(shouldFinalize = true) {
             const h = document.getElementById('homeScore').value;
             const a = document.getElementById('awayScore').value;
             const resText = document.getElementById('evaluationResult').innerText;
@@ -935,8 +931,11 @@
             localStorage.setItem('eventsWithResults', JSON.stringify(eventsWithResults));
             localStorage.setItem('fullEventDataCache', JSON.stringify(currentEventData));
 
-            closeModal();
-            initDashboard();
+            // Only close and refresh if we are done with the batch
+            if (shouldFinalize) {
+                closeModal();
+                initDashboard();
+            }
         }
 
         function closeModal() { document.getElementById('editModal').style.display = 'none'; }
