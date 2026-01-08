@@ -863,45 +863,51 @@ document.querySelector('.btn-apply').addEventListener('click', function() {
             }
 
             // NEW Step 4: Re-calculate Client-level Totals for the Cache
-            if (currentEventData && currentEventData.results) {
-                currentEventData.results.forEach(idGroup => {
-                    let totalStake = 0;
-                    let totalPending = 0;
-                    let totalPl = 0;
-                    let totalPlSimulation = 0;
-                    let totalStakeSimulation = 0;
+           // NEW Step 4: Re-calculate Client-level Totals safely
+if (currentEventData && currentEventData.results) {
+    currentEventData.results.forEach(idGroup => {
+        let totalStake = 0;
+        let totalPending = 0;
+        let totalPl = 0;
+        let totalPlSimulation = 0;
+        let totalStakeSimulation = 0;
 
-                    if (idGroup.rows && Array.isArray(idGroup.rows)) {
-                        idGroup.rows.forEach(row => {
-                            // We only aggregate rows that carry the stake (usually type "" or type "M" summary row)
-                            // If your data structure has stakes on every row, adjust logic here
-                            if (row.stakeReal && row.stakeReal !== "0" && (row.type === "" || row.type === "M") && (row.line === "" || row.type === "")) {
-                                const s = parseFloat(row.stakeReal) || 0;
-                                const p = parseFloat(row.plReal) || 0;
-                                const pSim = parseFloat(row.plSimulation) || 0;
-
-                                totalStake += s;
-                                totalStakeSimulation += parseFloat(row.stakeSimulation) || 0;
-                                if (row.eval === "pen") {
-                                    totalPending += s;
-                                } else {
-                                    totalPl += p;
-                                    totalPlSimulation += pSim;
-                                }
-                            }
-                        });
+        if (idGroup.rows && Array.isArray(idGroup.rows)) {
+            idGroup.rows.forEach(row => {
+                if ((row.type === "" || row.type === "M") && (row.line === "" || row.type === "")) {
+                    
+                    // REAL TOTALS
+                    const s = parseFloat(row.stakeReal) || 0;
+                    const p = parseFloat(row.plReal) || 0;
+                    totalStake += s;
+                    if (row.eval === "pen") {
+                        totalPending += s;
+                    } else {
+                        totalPl += p;
                     }
 
-                    // Update the idGroup properties (the columns in your Client List table)
-                    idGroup.clientStake = totalStake.toFixed(2);
-                    idGroup.clientPendingStake = totalPending.toFixed(2);
-                    idGroup.clientPl = totalPl.toFixed(2);
-                    idGroup.clientPlSimulation = totalPlSimulation.toFixed(2);
-                    idGroup.clientStakeSimulation = totalStakeSimulation.toFixed(2);
+                    // SIMULATION TOTALS 
+                    // Use simulation stake if it exists, otherwise fall back to real stake
+                    const sSim = parseFloat(row.stakeSimulation) || s; 
+                    const pSim = parseFloat(row.plSimulation) || 0;
+                    
+                    totalStakeSimulation += sSim;
+                    // Only add to PL if it's not pending
+                    if (row.eval !== "pen") {
+                        totalPlSimulation += pSim;
+                    }
+                }
+            });
+        }
 
-                    console.log(idGroup);
-                });
-            }
+        idGroup.clientStake = totalStake.toFixed(2);
+        idGroup.clientPendingStake = totalPending.toFixed(2);
+        idGroup.clientPl = totalPl.toFixed(2);
+        idGroup.clientPlSimulation = totalPlSimulation.toFixed(2);
+        idGroup.clientStakeSimulation = totalStakeSimulation.toFixed(2);
+        console.log(`Updated client ${idGroup.id}: Stake=${idGroup.clientStake}, Pending=${idGroup.clientPendingStake}, PL=${idGroup.clientPl}, SimPL=${idGroup.clientPlSimulation}, SimStake=${idGroup.clientStakeSimulation}`);
+    });
+}
 
             // Helper to keep code clean
             function calculatePlReal(row) {
