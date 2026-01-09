@@ -393,6 +393,89 @@
                 padding: 6px 8px;
             }
         }
+
+
+
+
+        /* Container for each row */
+.client-event-item {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    background: rgba(255, 255, 255, 0.05);
+    margin-bottom: 10px;
+    padding: 12px 15px;
+    border-radius: 8px;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.event-text {
+    flex: 1;
+    font-size: 0.9rem;
+}
+
+/* Input Styles */
+.input-group {
+    display: flex;
+    gap: 15px;
+    margin: 0 20px;
+}
+
+.input-group label {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    font-weight: bold;
+    font-size: 1.1rem;
+}
+
+.score-input {
+    width: 45px;
+    background: transparent;
+    border: 2px solid #555;
+    border-radius: 4px;
+    color: white;
+    text-align: center;
+    padding: 4px;
+}
+
+/* Buttons Logic */
+.action-buttons {
+    display: flex;
+    gap: 10px;
+    opacity: 0; /* Hidden by default */
+    pointer-events: none;
+    transition: opacity 0.2s ease;
+}
+
+/* Show buttons when the parent has the .is-editing class */
+.client-event-item.is-editing .action-buttons {
+    opacity: 1;
+    pointer-events: auto;
+}
+
+.btn-apply, .btn-cancel {
+    background: none;
+    border: 2px solid;
+    border-radius: 6px;
+    cursor: pointer;
+    padding: 5px 10px;
+    font-weight: bold;
+    font-size: 1.2rem;
+}
+
+.btn-apply {
+    color: #00ff00;
+    border-color: #00ff00;
+}
+
+.btn-cancel {
+    color: #ff4d4d;
+    border-color: #ff4d4d;
+}
+
+.btn-apply:hover { background: rgba(0, 255, 0, 0.1); }
+.btn-cancel:hover { background: rgba(255, 77, 77, 0.1); }
     </style>
 </head>
 
@@ -467,7 +550,7 @@
     </div>
 
     <div class="modal-overlay" id="clientEventsModal">
-        <div class="modal-content" style="max-width: 500px;">
+        <div class="modal-content" style="max-width: 900px;">
             <div class="modal-header" id="clientModalTitle" style="color: var(--accent-cyan); font-weight:700;">Client
                 Events</div>
             <div id="clientEventsList" style="margin: 20px 0; max-height: 300px; overflow-y: auto; text-align: left;">
@@ -980,14 +1063,52 @@ if (currentEventData && currentEventData.results) {
             if (!events || events.length === 0) {
                 listContainer.innerHTML = "<p style='text-align:center; opacity:0.5;'>No events found.</p>";
             } else {
-                listContainer.innerHTML = events.map(event => `
-            <div class="client-event-item">
-                ${event}
-            </div>
-        `).join('');
+                listContainer.innerHTML = events.map((event, index) => `
+                    <div class="client-event-item" data-index="${index}">
+                        <span class="event-text">${event}</span>
+                        <div class="input-group">
+                            <label>H <input type="number" class="score-input input-home" placeholder="0"></label>
+                            <label>A <input type="number" class="score-input input-away" placeholder="0"></label>
+                        </div>
+                        <div class="action-buttons">
+                            <button class="btn-apply" onclick="handleApply(${index})">✔</button>
+                            <button class="btn-cancel" onclick="handleCancel(${index})">✖</button>
+                        </div>
+                    </div>
+                `).join('');
             }
             document.getElementById('clientEventsModal').style.display = 'flex';
         }
+
+        // Logic to handle saving (Apply)
+        function handleApply(index) {
+            const row = document.querySelector(`.client-event-item[data-index="${index}"]`);
+            const inputs = row.querySelectorAll('input');
+            console.log(`Applying scores for event ${index}: H-${inputs[0].value}, A-${inputs[1].value}`);
+            // Hide buttons after apply
+            row.classList.remove('is-editing');
+
+            applyEdit();
+            row.querySelector('.input-home').setAttribute("id", "");
+            row.querySelector('.input-away').setAttribute("id", "");
+        }
+
+        // Logic to handle resetting (Cancel)
+        function handleCancel(index) {
+            const row = document.querySelector(`.client-event-item[data-index="${index}"]`);
+            const inputs = row.querySelectorAll('input');
+            inputs.forEach(input => input.value = ""); // Clear inputs
+            row.classList.remove('is-editing');
+        }
+
+        // Event delegation to show buttons when an input is focused or changed
+        document.getElementById('clientEventsList').addEventListener('input', (e) => {
+            if (e.target.classList.contains('score-input')) {
+                e.target.closest('.client-event-item').classList.add('is-editing');
+                e.target.closest('.client-event-item').querySelector('.input-home').setAttribute("id", "homeScore");
+                e.target.closest('.client-event-item').querySelector('.input-away').setAttribute("id", "awayScore");
+            }
+        });
 
         function closeClientModal() {
             document.getElementById('clientEventsModal').style.display = 'none';
