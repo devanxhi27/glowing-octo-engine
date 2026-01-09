@@ -1,0 +1,1105 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Clients Dashboard - Unified</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --glass-bg: rgba(255, 255, 255, 0.07);
+            --glass-border: rgba(255, 255, 255, 0.1);
+            --accent-cyan: #00fff2;
+            --accent-pink: #ff007f;
+            --modal-overlay: rgba(0, 0, 0, 0.8);
+        }
+
+        body {
+            margin: 0;
+            background: linear-gradient(135deg, #112868 0%, #8a0b80 100%) fixed;
+            min-height: 100vh;
+            font-family: "Poppins", sans-serif;
+            color: white;
+            display: flex;
+            justify-content: center;
+            padding: 40px 20px;
+        }
+
+        .container {
+            width: 100%;
+            max-width: 1400px;
+            display: flex;
+            flex-direction: column;
+            gap: 25px;
+        }
+
+        h2 {
+            text-align: center;
+            margin: 0;
+            text-shadow: 0 0 15px rgba(255, 255, 255, 0.3);
+        }
+
+        .chart-card {
+            background: var(--glass-bg);
+            backdrop-filter: blur(20px);
+            border: 1px solid var(--glass-border);
+            border-radius: 24px;
+            padding: 30px;
+            box-shadow: 0 25px 50px rgba(0, 0, 0, 0.4);
+            width: 100%;
+            height: 450px;
+            box-sizing: border-box;
+        }
+
+        .simulation-row {
+            display: flex;
+            gap: 20px;
+            width: 100%;
+            flex-wrap: wrap;
+        }
+
+        .sim-card {
+            background: var(--glass-bg);
+            backdrop-filter: blur(20px);
+            border: 1px solid var(--glass-border);
+            border-radius: 24px;
+            padding: 25px;
+            box-shadow: 0 25px 50px rgba(0, 0, 0, 0.4);
+            flex: 1;
+            min-width: 320px;
+            max-height: 600px;
+            overflow-y: auto;
+            box-sizing: border-box;
+            position: relative;
+        }
+
+        .sim-card h1 {
+            font-size: 1.4rem;
+            text-align: center;
+            margin-bottom: 20px;
+            color: var(--accent-cyan);
+        }
+
+        /* NEW CLEAR BUTTON STYLING */
+        #clearCacheBtn {
+            background: rgba(255, 0, 127, 0.15);
+            color: var(--accent-pink);
+            border: 1px solid var(--accent-pink);
+            padding: 4px 10px;
+            border-radius: 6px;
+            font-size: 0.7rem;
+            cursor: pointer;
+            position: absolute;
+            top: 25px;
+            right: 25px;
+            transition: all 0.2s;
+        }
+
+        #clearCacheBtn:hover {
+            background: var(--accent-pink);
+            color: white;
+        }
+
+        #clientList {
+            width: 100%;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: separate;
+            border-spacing: 0 8px;
+            font-size: 0.85rem;
+        }
+
+        th {
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            font-size: 0.75rem;
+            color: var(--accent-cyan);
+            padding: 12px 15px;
+            text-align: left;
+            position: sticky;
+            top: 0;
+            background: rgba(20, 30, 60, 0.8);
+            z-index: 10;
+        }
+
+        td {
+            padding: 12px 15px;
+            background: rgba(255, 255, 255, 0.05);
+            border-top: 1px solid var(--glass-border);
+            border-bottom: 1px solid var(--glass-border);
+        }
+
+        td:first-child {
+            border-left: 1px solid var(--glass-border);
+            border-radius: 10px 0 0 10px;
+            font-weight: 600;
+        }
+
+        td:last-child {
+            border-right: 1px solid var(--glass-border);
+            border-radius: 0 10px 10px 0;
+        }
+
+        tr:hover td {
+            background: rgba(255, 255, 255, 0.1);
+            border-color: var(--accent-pink);
+        }
+
+        .event-card {
+            background: rgba(255, 255, 255, 0.05);
+            margin-bottom: 10px;
+            padding: 15px;
+            border-radius: 12px;
+            border: 1px solid transparent;
+            transition: all 0.2s ease;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .event-info {
+            flex-grow: 1;
+            text-align: left;
+        }
+
+        .event-info a {
+            color: white;
+            text-decoration: none;
+            font-weight: 500;
+            font-size: 0.9rem;
+        }
+
+        .event-result-text {
+            font-size: 0.8rem;
+            font-weight: 700;
+            margin-right: 12px;
+            text-transform: uppercase;
+        }
+
+        .edit-btn {
+            background: var(--accent-cyan);
+            color: #112868;
+            border: none;
+            padding: 6px 12px;
+            border-radius: 6px;
+            font-family: inherit;
+            font-weight: 600;
+            cursor: pointer;
+            font-size: 0.8rem;
+        }
+
+        .modal-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: var(--modal-overlay);
+            display: none;
+            justify-content: center;
+            align-items: center;
+            z-index: 2000;
+            backdrop-filter: blur(5px);
+        }
+
+        .modal-content {
+            background: rgba(20, 30, 60, 0.95);
+            border: 1px solid var(--accent-cyan);
+            border-radius: 20px;
+            padding: 30px;
+            width: 90%;
+            max-width: 400px;
+            text-align: center;
+        }
+
+        .input-group {
+            display: flex;
+            justify-content: space-between;
+            gap: 15px;
+            margin-bottom: 25px;
+        }
+
+        .input-field {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .input-field input {
+            background: rgba(255, 255, 255, 0.1);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            padding: 10px;
+            color: white;
+            border-radius: 8px;
+            text-align: center;
+        }
+
+        .btn {
+            flex: 1;
+            padding: 12px;
+            border-radius: 10px;
+            border: none;
+            font-family: inherit;
+            font-weight: 600;
+            cursor: pointer;
+        }
+
+        .btn-apply {
+            background: var(--accent-cyan);
+            color: #112868;
+        }
+
+        .btn-close {
+            background: rgba(255, 255, 255, 0.1);
+            color: white;
+        }
+
+        .status-win {
+            background: rgba(0, 255, 242, 0.2);
+            color: var(--accent-cyan);
+            border: 1px solid var(--accent-cyan);
+        }
+
+        .status-loss {
+            background: rgba(255, 0, 127, 0.2);
+            color: var(--accent-pink);
+            border: 1px solid var(--accent-pink);
+        }
+
+        .status-pending {
+            background: rgba(255, 255, 255, 0.1);
+            color: #ccc;
+            border: 1px solid #555;
+        }
+
+        .evaluation-box {
+            margin-bottom: 20px;
+            padding: 15px;
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 12px;
+        }
+
+        .eval-status {
+            padding: 5px;
+            border-radius: 5px;
+            font-weight: bold;
+        }
+
+        .corner-widget {
+            position: fixed;
+            bottom: 15px;
+            right: 20px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            opacity: 0.45;
+            cursor: pointer;
+        }
+
+        .corner-icon {
+            width: 38px;
+            height: 38px;
+            filter: brightness(0) invert(1);
+        }
+
+        .corner-text {
+            margin-top: 4px;
+            font-size: 0.9rem;
+            color: rgba(255, 255, 255, 0.8);
+        }
+
+        #clientList tbody tr {
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+
+        .client-event-item {
+            background: rgba(255, 255, 255, 0.05);
+            padding: 10px;
+            border-radius: 8px;
+            margin-bottom: 8px;
+            font-size: 0.85rem;
+            border: 1px solid var(--glass-border);
+        }
+
+        /* MOBILE RESPONSIVENESS - Added without changing original desktop styles */
+        @media (max-width: 768px) {
+            body {
+                padding: 20px 10px; /* Reduced outer padding */
+            }
+
+            .container {
+                gap: 15px;
+            }
+
+            .chart-card {
+                height: 300px; /* Shorter chart for small screens */
+                padding: 15px;
+            }
+
+            .simulation-row {
+                flex-direction: column; /* Stacks the two cards vertically */
+            }
+
+            .sim-card {
+                min-width: 100%;
+                padding: 15px;
+            }
+
+            .sim-card h1 {
+                font-size: 1.1rem;
+            }
+
+            /* Makes the table scrollable horizontally on small phones */
+            #clientList {
+                overflow-x: auto;
+                -webkit-overflow-scrolling: touch;
+            }
+
+            table {
+                min-width: 500px; /* Prevents text from squishing too much */
+            }
+
+            .event-card {
+                padding: 10px;
+                flex-wrap: wrap; /* Allows button to move below text if needed */
+                gap: 10px;
+            }
+
+            .event-info a {
+                font-size: 0.8rem;
+            }
+
+            /* Adjusts input fields so they are easier to tap on mobile */
+            .input-field input {
+                font-size: 16px; /* Prevents iOS auto-zoom on focus */
+                padding: 12px 5px;
+            }
+
+            /* Corner widget adjustment for thumb reach */
+            .corner-widget {
+                bottom: 10px;
+                right: 10px;
+                opacity: 0.8; /* Slightly more visible on mobile */
+            }
+            
+            #clearCacheBtn {
+                top: 15px;
+                right: 15px;
+                padding: 6px 8px;
+            }
+        }
+    </style>
+</head>
+
+<body>
+
+    <div class="container">
+        <h2>Performance Analysis</h2>
+       
+
+        <div class="simulation-row">
+            <div class="sim-card" id="weekContainer">
+                <h1 id="pendingHeader">Pending Events</h1>
+                <div id="weekList"></div>
+            </div>
+            <div class="sim-card" id="clientContainer">
+                <!-- <h1>Client Simulations</h1> -->
+                <div id="clientList">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Client</th>
+                                <th>Stake</th>
+                                <th>PL</th>
+                                <th>Pending</th>
+                                <th>Simulation</th>
+                            </tr>
+                        </thead>
+                        <tbody></tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <div class="chart-card"><canvas id="unifiedChart"></canvas></div>
+
+        <a href="./clients.html">
+            <div class="corner-widget">
+                <img class="corner-icon" src="public/images/home-17-svgrepo-com.svg" alt="home Icon">
+                <span class="corner-text">Home</span>
+            </div>
+        </a>
+    </div>
+
+    <div class="modal-overlay" id="editModal">
+        <div class="modal-content">
+            <div class="modal-header" id="modalTitle" style="color: var(--accent-cyan); font-weight:700;">Match Name
+            </div>
+            <div class="modal-line-info" id="modalMarket" style="font-size:0.8rem; margin-bottom:20px; opacity:0.7;">
+                Line: home_0.5</div>
+
+            <div class="input-group">
+                <div class="input-field">
+                    <label style="font-size:0.75rem; margin-bottom:5px;">Home Score</label>
+                    <input type="number" id="homeScore" placeholder="0" oninput="updateEvaluation()">
+                </div>
+                <div class="input-field">
+                    <label style="font-size:0.75rem; margin-bottom:5px;">Away Score</label>
+                    <input type="number" id="awayScore" placeholder="0" oninput="updateEvaluation()">
+                </div>
+            </div>
+
+            <div class="evaluation-box">
+                <div style="font-size: 0.7rem; opacity: 0.6; margin-bottom: 5px;">LIVE EVALUATION</div>
+                <div id="evaluationResult" class="eval-status status-pending">Enter Scores</div>
+            </div>
+
+            <div style="display: flex; gap: 10px;">
+                <button class="btn btn-close" onclick="closeModal()">Close</button>
+                <button class="btn btn-apply" onclick="applyEdit()">Apply Result</button>
+            </div>
+        </div>
+    </div>
+
+    <div class="modal-overlay" id="clientEventsModal">
+        <div class="modal-content" style="max-width: 500px;">
+            <div class="modal-header" id="clientModalTitle" style="color: var(--accent-cyan); font-weight:700;">Client
+                Events</div>
+            <div id="clientEventsList" style="margin: 20px 0; max-height: 300px; overflow-y: auto; text-align: left;">
+            </div>
+            <button class="btn btn-close" onclick="closeClientModal()">Close</button>
+        </div>
+    </div>
+
+<script>
+        const API_BASE = 'https://eagle-current-dinosaur.ngrok-free.app';
+        const FETCH_OPTIONS = { headers: { "ngrok-skip-browser-warning": "true", "Accept": "application/json" } };
+        let myChart = null;
+        let activeLine = "";
+        let activeFullEvent = "";
+        let currentEventData = null; // Added to store data for iteration
+
+        // Cache initialization
+        let eventsWithResults = JSON.parse(localStorage.getItem('eventsWithResults')) || {};
+
+       async function initDashboard() {
+    try {
+        const [cRes, eRes] = await Promise.all([
+            fetch(`${API_BASE}/main-page-data`, FETCH_OPTIONS),
+            fetch(`${API_BASE}/pending-events`, FETCH_OPTIONS)
+        ]);
+        
+        const clientData = await cRes.json();
+        const freshEventData = await eRes.json();
+
+        // CHECK CACHE: Load previously modified results if they exist
+        const cachedData = JSON.parse(localStorage.getItem('fullEventDataCache'));
+        
+        if (cachedData && cachedData.lastUpdate === freshEventData.lastUpdate) {
+            // Use cached data because it contains your manual evaluations
+            currentEventData = cachedData;
+        } else {
+            // Use fresh data if no cache exists or if the server data has updated
+            currentEventData = freshEventData;
+        }
+
+        renderChart(clientData);
+        renderWeekList(currentEventData); // Use currentEventData
+        renderClientList(currentEventData); // Use currentEventData
+        handleClearButtonVisibility();
+        document.querySelector(".corner-text").innerText = "Last Update: " + currentEventData.lastUpdate;
+    } catch (err) { console.error(err); }
+}
+
+        function handleEventClick(url) {
+            if (!url || url.trim() === "") {
+                alert("We couldn't find this event in our records, therefore we cant redirect you to it.");
+            } else {
+                window.open(url, '_blank');
+            }
+        }
+
+        function renderWeekList(data) {
+            const list = document.getElementById('weekList');
+            list.innerHTML = data.uniqueEvents.map((event) => {
+                const saved = eventsWithResults[event];
+                let resultHtml = "";
+
+                if (saved) {
+                    const color = saved.result === "WIN" || saved.result === "1/2 WIN" ? "var(--accent-cyan)" :
+                        saved.result === "LOSS" || saved.result === "1/2 LOSE" ? "var(--accent-pink)" : "#ccc";
+                    resultHtml = `<span class="event-result-text" style="color: ${color}">${saved.result} (${saved.score})</span>`;
+                }
+
+                return `
+                    <div class="event-card">
+                        <div class="event-info">
+                           <a href="javascript:void(0)" onclick="handleEventClick('${data.uniqueEventsWithLinks[event]?.league?.url || ""}')">${event}</a>
+                        </div>
+                        <div style="display: flex; align-items: center;">
+                            ${resultHtml}
+                            <button class="edit-btn" onclick="openModal('${event.replace(/'/g, "\\'")}')">Edit</button>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+        }
+
+        function handleClearButtonVisibility() {
+            let btn = document.getElementById('clearCacheBtn');
+            const hasCache = Object.keys(eventsWithResults).length > 0;
+
+            if (hasCache && !btn) {
+                btn = document.createElement('button');
+                btn.id = 'clearCacheBtn';
+                btn.innerText = 'Clear Results';
+                btn.onclick = clearCache;
+                document.getElementById('weekContainer').appendChild(btn);
+            } else if (!hasCache && btn) {
+                btn.remove();
+            }
+        }
+
+        function clearCache() {
+            if (confirm("Delete all saved results?")) {
+                eventsWithResults = {};
+                localStorage.removeItem('eventsWithResults');
+                localStorage.removeItem('fullEventDataCache');
+                initDashboard();
+            }
+        }
+
+        function openModal(fullEventString) {
+            activeFullEvent = fullEventString;
+            const parts = fullEventString.split(": ");
+            activeLine = parts[1] || "";
+
+            document.getElementById('modalTitle').innerText = parts[0];
+            document.getElementById('modalMarket').innerText = `Line: ${activeLine}`;
+
+            const saved = eventsWithResults[fullEventString];
+            if (saved) {
+                const scores = saved.score.split('-');
+                document.getElementById('homeScore').value = scores[0];
+                document.getElementById('awayScore').value = scores[1];
+            } else {
+                document.getElementById('homeScore').value = "";
+                document.getElementById('awayScore').value = "";
+            }
+
+            updateEvaluation();
+            document.getElementById('editModal').style.display = 'flex';
+        }
+
+        function updateEvaluation() {
+    const h = parseFloat(document.getElementById('homeScore').value);
+    const a = parseFloat(document.getElementById('awayScore').value);
+    const display = document.getElementById('evaluationResult');
+
+    if (isNaN(h) || isNaN(a)) {
+        display.innerText = "Enter Result";
+        display.className = "eval-status status-pending";
+        return;
+    }
+
+    // Just update the modal UI for the current active item
+    const isWin = evaluateBet(h, a, activeLine);
+    
+    if (isWin === true) {
+        display.innerText = "WIN";
+        display.className = "eval-status status-win";
+    } else if (isWin === false) {
+        display.innerText = "LOSS";
+        display.className = "eval-status status-loss";
+    } else if (isWin === "half-lose") {
+        display.innerText = "1/2 LOSE";
+        display.className = "eval-status status-loss";
+    } else if (isWin === "half-win") {
+        display.innerText = "1/2 WIN";
+        display.className = "eval-status status-win";
+    } else {
+        display.innerText = "VOID";
+        display.className = "eval-status status-pending";
+    }
+}
+
+// Add this to your event listener for the Apply button
+document.querySelector('.btn-apply').addEventListener('click', function() {
+    const h = parseFloat(document.getElementById('homeScore').value);
+    const a = parseFloat(document.getElementById('awayScore').value);
+    if (isNaN(h) || isNaN(a)) return;
+
+    const eventString = document.getElementById('modalTitle').innerText;
+    const originalLineMarket = ((activeLine.toLowerCase().includes("corn")) ? "CORNERS" : ((activeLine.toLowerCase().includes("card")) ? "CARDS" : "GOALS"));
+
+    // Convert NodeList to Array and filter for matches first
+    const itemsToProcess = Array.from(document.querySelectorAll(".event-info")).filter(itm => {
+        let eventTitle = itm.innerText.split(": ")[0];
+        let itemLine = itm.innerText.split(": ")[1];
+        let currentLineMarket = ((itemLine.toLowerCase().includes("corn")) ? "CORNERS" : ((itemLine.toLowerCase().includes("card")) ? "CARDS" : "GOALS"));
+        
+        return (eventTitle === eventString && currentLineMarket === originalLineMarket);
+    });
+
+    // Loop through the filtered matches
+    itemsToProcess.forEach((itm, index) => {
+        // Update global variables for the current item in the loop
+        activeFullEvent = itm.innerText;
+        activeLine = itm.innerText.split(": ")[1];
+        
+        // Check if this is the last item in our filtered list
+        const isLastItem = (index === itemsToProcess.length - 1);
+
+        // Call applyEdit with the boolean flag
+        // If it's the last item, it passes true (to close modal), otherwise false
+        applyEdit(isLastItem);
+        
+        console.log(`Processed ${index + 1} of ${itemsToProcess.length}`);
+    });
+});
+
+        function replaceCommonLineMiswritings(line)
+        {
+            let replacedLine = line;
+            if (line.includes("CORNER_HANDICAP AWAY")) {
+                return line.replace("CORNER_HANDICAP AWAY", "corn_away_");
+            } else if (line.includes("CORNER_HANDICAP HOME")) {
+                return line.replace("CORNER_HANDICAP HOME", "corn_home_");
+
+            } else if (line.includes("GAME_TOTAL_CORNERS UNDER")) {
+                return line.replace("GAME_TOTAL_CORNERS UNDER", "corn_under_");
+            } else if (line.includes("GAME_TOTAL_CORNERS OVER")) {
+                return line.replace("GAME_TOTAL_CORNERS OVER", "corn_over_");
+
+            } else if (line.includes("TEAM_TOTAL_CORNERS HOME_UNDER")) {
+                return line.replace("TEAM_TOTAL_CORNERS HOME_UNDER", "corn_home_under_");
+            } else if (line.includes("TEAM_TOTAL_CORNERS HOME_OVER")) {
+                return line.replace("TEAM_TOTAL_CORNERS HOME_OVER", "corn_home_over_");
+
+            } else if (line.includes("TEAM_TOTAL_CORNERS AWAY_UNDER")) {
+                return line.replace("TEAM_TOTAL_CORNERS AWAY_UNDER", "corn_away_under_");
+            } else if (line.includes("TEAM_TOTAL_CORNERS AWAY_OVER")) {
+                return line.replace("TEAM_TOTAL_CORNERS AWAY_OVER", "corn_away_over_");
+                
+
+            } else if (line.includes("CARD_HANDICAP AWAY")) {
+                return line.replace("CARD_HANDICAP AWAY", "card_away_");
+            } else if (line.includes("CARD_HANDICAP HOME")) {
+                return line.replace("CARD_HANDICAP HOME", "card_home_");
+
+            } else if (line.includes("GAME_TOTAL_CARDS UNDER")) {
+                return line.replace("GAME_TOTAL_CARDS UNDER", "card_under_");
+            } else if (line.includes("GAME_TOTAL_CARDS OVER")) {
+                return line.replace("GAME_TOTAL_CARDS OVER", "card_over_");
+
+            } else if (line.includes("TEAM_TOTAL_CARDS HOME_UNDER")) {
+                return line.replace("TEAM_TOTAL_CARDS HOME_UNDER", "card_home_under_");
+            } else if (line.includes("TEAM_TOTAL_CARDS HOME_OVER")) {
+                return line.replace("TEAM_TOTAL_CARDS HOME_OVER", "card_home_over_");
+
+            } else if (line.includes("TEAM_TOTAL_CARDS AWAY_UNDER")) {
+                return line.replace("TEAM_TOTAL_CARDS AWAY_UNDER", "card_away_under_");
+            } else if (line.includes("TEAM_TOTAL_CARDS AWAY_OVER")) {
+                return line.replace("TEAM_TOTAL_CARDS AWAY_OVER", "card_away_over_");
+
+            } else {
+                return line;
+            }
+        }
+
+        function evaluateBet(h, a, ogLine) {
+            if (!ogLine) return null;
+            let replacedLine = replaceCommonLineMiswritings(ogLine);
+            if (replacedLine.includes("corn") || replacedLine.includes("card")) {
+                replacedLine = replacedLine.replace("corn_", "").replace("card_", "");
+            }
+            let currentMarketType = "Goals";
+            if (replacedLine.includes("corn")) {
+                currentMarketType = "Corners";
+            } else if (replacedLine.includes("card")) {
+                currentMarketType = "Cards";
+            }
+            console.log(replacedLine);
+            let line = replacedLine.replace("(", "").replace(")", "");
+            const l = line.toLowerCase();
+            const parts = l.split('_');
+
+            if (l === "home") return h > a;
+            if (l === "away") return a > h;
+            if (l === "draw") return a == h;
+
+            if (l.includes('over') || l.includes('under')) {
+                const isOver = l.includes('over');
+                const v = parseFloat(parts.find(p => !isNaN(parseFloat(p))));
+                const total = h + a;
+
+                if (l.includes('home')) return isOver ? h > v : h < v;
+                if (l.includes('away')) return isOver ? a > v : a < v;
+
+                if (total === v) return null;
+                return isOver ? total > v : total < v;
+            }
+
+            if (parts[0] === 'home' || parts[0] === 'away') {
+                const v = parseFloat(parts[1]);
+                if (parts[0] === 'home') {
+                    const result = h + v;
+                    if (result === a) return null;
+                    if (result - a == 0.25) return "half-win";
+                    if (result - a == -0.25) return "half-lose";
+                    return result - a > 0.25;
+                }
+                if (parts[0] === 'away') {
+                    // console.log("Handicap away", parts, a, v, a + v)
+                    const result = a + v;
+                    if (result === h) return null;
+                    if (result - h == 0.25) return "half-win";
+                    if (result - h == -0.25) return "half-lose";
+                    return result - h > 0.25;
+                }
+            }
+            return null;
+        }
+
+        function applyEdit(shouldFinalize = true) {
+            const h = document.getElementById('homeScore').value;
+            const a = document.getElementById('awayScore').value;
+            const resText = document.getElementById('evaluationResult').innerText;
+
+            if (h === "" || a === "") return;
+
+            let shortFormResult = "pen";
+            if (resText === "WIN") {
+                shortFormResult = "W";
+            } else if (resText === "LOSS") {
+                shortFormResult = "L";
+            } else if (resText === "VOID") {
+                shortFormResult = "V";
+            } else if (resText === "1/2 WIN") {
+                shortFormResult = "W1/2";
+            } else if (resText === "1/2 LOSE") {
+                shortFormResult = "L1/2";
+            }
+
+            eventsWithResults[activeFullEvent] = {
+                score: `${h}-${a}`,
+                result: resText
+            };
+
+            let matchingIds = [];
+
+            // Step 1: Identify which IDs are affected by this event
+            if (currentEventData && currentEventData.results) {
+                currentEventData.results.forEach(idGroup => {
+                    if (idGroup.rows && Array.isArray(idGroup.rows)) {
+                        idGroup.rows.forEach(row => {
+                            if (row.home && row.home !== "" && row.line && row.line !== "") {
+                                let eventStr = row.home + " vs " + row.away + ": " + row.line;
+                                if (eventStr === activeFullEvent) {
+                                    if (row.id && row.id !== "" && !matchingIds.includes(row.id)) {
+                                        matchingIds.push(row.id);
+                                    }
+                                }
+                            }
+                        });
+                    }
+                });
+            }
+
+            // Step 2: Update individual event rows first
+            // if (currentEventData && currentEventData.results) {
+            //     currentEventData.results.forEach(idGroup => {
+            //         if (idGroup.rows && Array.isArray(idGroup.rows)) {
+            //             idGroup.rows.forEach(row => {
+            //                 if (matchingIds.includes(row.id)) {
+            //                     if (row.home && row.home !== "" && row.line && row.line !== "") {
+            //                         let eventStr = row.home + " vs " + row.away + ": " + row.line;
+            //                         if (eventStr === activeFullEvent) {
+            //                             row.eval = shortFormResult;
+            //                         }
+            //                     }
+            //                 }
+            //             });
+            //         }
+            //     });
+            // }
+
+            // Step 3: Evaluate the Main Row (Type "" or Type "M")
+            if (currentEventData && currentEventData.results) {
+                currentEventData.results.forEach(idGroup => {
+                    if (idGroup.rows && Array.isArray(idGroup.rows)) {
+                        const currentRows = idGroup.rows;
+                        currentRows.forEach(row => {
+                            if (matchingIds.includes(row.id)) {
+                                if (row.type === "" && row.stakeReal && row.stakeReal !== "0") {
+                                    row.eval = shortFormResult;
+                                    calculatePlReal(row);
+                                } 
+                                else if (row.type === "M" && (row.line === "" || !row.line) && row.stakeReal && row.stakeReal !== "0") {
+                                    const siblingEvents = currentRows.filter(r => r.id === row.id && r.home !== "" && r.line !== "");
+                                    const allEvaluated = siblingEvents.every(r => r.eval && r.eval !== "pen");
+                                    const hasALoss = siblingEvents.some(r => r.eval === "L");
+
+                                    if (allEvaluated) {
+                                        row.eval = hasALoss ? "L" : "W";
+                                        calculatePlReal(row);
+                                    } else if (hasALoss) {
+                                        row.eval = "L";
+                                        calculatePlReal(row);
+                                    } else {
+                                        row.eval = "pen";
+                                        row.plReal = 0;
+                                    }
+                                }
+                            }
+                        });
+                    }
+                });
+            }
+
+            // NEW Step 4: Re-calculate Client-level Totals for the Cache
+           // NEW Step 4: Re-calculate Client-level Totals safely
+if (currentEventData && currentEventData.results) {
+    currentEventData.results.forEach(idGroup => {
+        let totalStake = 0;
+        let totalPending = 0;
+        let totalPl = 0;
+        let totalPlSimulation = 0;
+        let totalStakeSimulation = 0;
+
+        if (idGroup.rows && Array.isArray(idGroup.rows)) {
+            idGroup.rows.forEach(row => {
+                if ((row.type === "" || row.type === "M") && (row.line === "" || row.type === "")) {
+                    
+                    // REAL TOTALS
+                    const s = parseFloat(row.stakeReal) || 0;
+                    const p = parseFloat(row.plReal) || 0;
+                    totalStake += s;
+                    if (row.eval === "pen") {
+                        totalPending += s;
+                    } else {
+                        totalPl += p;
+                    }
+
+                    // SIMULATION TOTALS 
+                    // Use simulation stake if it exists, otherwise fall back to real stake
+                    const sSim = parseFloat(row.stakeSimulation) || s; 
+                    const pSim = parseFloat(row.plSimulation) || 0;
+                    
+                    totalStakeSimulation += sSim;
+                    // Only add to PL if it's not pending
+                    if (row.eval !== "pen") {
+                        totalPlSimulation += pSim;
+                    }
+                }
+            });
+        }
+
+        idGroup.clientStake = totalStake.toFixed(2);
+        idGroup.clientPendingStake = totalPending.toFixed(2);
+        idGroup.clientPl = totalPl.toFixed(2);
+        idGroup.clientPlSimulation = totalPlSimulation.toFixed(2);
+        idGroup.clientStakeSimulation = totalStakeSimulation.toFixed(2);
+        console.log(`Updated client ${idGroup.id}: Stake=${idGroup.clientStake}, Pending=${idGroup.clientPendingStake}, PL=${idGroup.clientPl}, SimPL=${idGroup.clientPlSimulation}, SimStake=${idGroup.clientStakeSimulation}`);
+    });
+}
+
+            // Helper to keep code clean
+            function calculatePlReal(row) {
+                const stake = parseFloat(row.stakeReal);
+                const odd = parseFloat(row.odd);
+                row.stakeSimulation = stake;
+                if (row.eval === "L") {
+                    row.plReal = -1 * stake;
+                    row.plSimulation =  -1 * stake;
+                } else if (row.eval === "W") {
+                    row.plReal = ((odd * stake) - stake).toFixed(2);
+                    row.plSimulation = ((odd * stake) - stake).toFixed(2);
+                } else if (row.eval === "W1/2") {
+                    let newOdd = (odd - 1) / 2 + 1;
+                    row.plReal = ((newOdd * stake) - stake).toFixed(2);
+                    row.plSimulation = ((newOdd * stake) - stake).toFixed(2);
+                } else if (row.eval === "L1/2") {
+                    row.plReal = (stake / 2) * -1;
+                    row.plSimulation = (stake / 2) * -1;
+                } else {
+                    row.plReal = 0;
+                    row.plSimulation = 0;
+                }
+            }
+
+            // Finalize Caching
+            localStorage.setItem('eventsWithResults', JSON.stringify(eventsWithResults));
+            localStorage.setItem('fullEventDataCache', JSON.stringify(currentEventData));
+
+            // Only close and refresh if we are done with the batch
+            if (shouldFinalize) {
+                closeModal();
+                initDashboard();
+            }
+        }
+
+        function closeModal() { document.getElementById('editModal').style.display = 'none'; }
+
+        function renderClientList(data) {
+            const tableBody = document.querySelector("#clientList tbody");
+            tableBody.innerHTML = data.results.map((id, index) => {
+                const isClickable = parseFloat(id.clientPendingStake) !== 0;
+                const clickHandler = isClickable ? `onclick='openClientModal(${JSON.stringify(id.uniqueEvents2).replace(/'/g, "&apos;")}, "${id.id}")'` : "";
+                let clientPlSimulation = parseFloat(id.clientPlSimulation);
+                if (isNaN(clientPlSimulation)) clientPlSimulation = 0;
+                let isPositive = clientPlSimulation > 0;
+                clientPlSimulation = (isPositive ? "+" : "") + "€" + clientPlSimulation.toFixed(2); 
+                return `
+            <tr ${clickHandler} style="${isClickable ? '' : 'cursor: default;'}">
+                <td>${id.id}</td>
+                <td>€${id.clientStake}</td>
+                <td>€${id.clientPl}</td>
+                <td style="${isClickable ? 'color: var(--accent-cyan); font-weight: bold;' : ''}">
+                    €${id.clientPendingStake}
+                </td>
+                <td style="color: ${isPositive ? 'var(--accent-cyan)' : 'var(--accent-pink)'}; font-weight: bold;">
+                    ${clientPlSimulation}
+                    <br>
+                    <small style="color: #ccc;">Stake: ${id.clientStakeSimulation ?? 0}</small>
+                </td>
+            </tr>
+        `;
+            }).join('');
+        }
+
+        function openClientModal(events, clientId) {
+            const listContainer = document.getElementById('clientEventsList');
+            document.getElementById('clientModalTitle').innerText = `Pending for: ${clientId}`;
+
+            if (!events || events.length === 0) {
+                listContainer.innerHTML = "<p style='text-align:center; opacity:0.5;'>No events found.</p>";
+            } else {
+                listContainer.innerHTML = events.map(event => `
+            <div class="client-event-item">
+                ${event}
+            </div>
+        `).join('');
+            }
+            document.getElementById('clientEventsModal').style.display = 'flex';
+        }
+
+        function closeClientModal() {
+            document.getElementById('clientEventsModal').style.display = 'none';
+        }
+
+        window.onclick = (e) => {
+            if (e.target.id === 'editModal') closeModal();
+            if (e.target.id === 'clientEventsModal') closeClientModal();
+        };
+
+        function renderChart(rawData) {
+            const ctx = document.getElementById('unifiedChart').getContext('2d');
+            const PL_MULTIPLIER = 8;
+            if (myChart) myChart.destroy();
+
+            const barGrad = ctx.createLinearGradient(0, 0, 0, 400);
+            barGrad.addColorStop(0, 'rgba(0, 255, 242, 0.8)');
+            barGrad.addColorStop(1, 'rgba(0, 255, 242, 0)');
+
+            myChart = new Chart(ctx, {
+                data: {
+                    labels: rawData.map(d => d.client),
+                    datasets: [
+                        {
+                            type: 'line',
+                            label: 'P/L',
+                            data: rawData.map(d => d.pl * PL_MULTIPLIER), 
+                            borderColor: '#FF6EC7',
+                            backgroundColor: '#FF6EC7',
+                            borderWidth: 2,
+                            pointRadius: 6,
+                            pointHoverRadius: 9,
+                            tension: 0.4,
+                            order: 1
+                        },
+                        {
+                            type: 'line',
+                            label: 'P/L Office',
+                            data: rawData.map(d => d.plOffice * PL_MULTIPLIER), 
+                            borderColor: '#00FFFF',
+                            backgroundColor: '#00FFFF',
+                            borderWidth: 2,
+                            pointRadius: 6,
+                            pointHoverRadius: 9,
+                            tension: 0.4,
+                            order: 1
+                        },
+                         {
+                            type: 'line',
+                            label: 'P/L Confirm',
+                            data: rawData.map(d => d.plConfirm * PL_MULTIPLIER), 
+                            borderColor: '#CCFF00',
+                            backgroundColor: '#CCFF00',
+                            borderWidth: 2,
+                            pointRadius: 6,
+                            pointHoverRadius: 9,
+                            tension: 0.4,
+                            order: 1
+                        },
+                        {
+                            type: 'bar',
+                            label: 'Total Stake',
+                            data: rawData.map(d => d.stake),
+                            backgroundColor: barGrad,
+                            borderColor: '#00fff2',
+                            borderWidth: 2,
+                            borderRadius: 10,
+                            order: 2
+                        }
+                    ]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    interaction: { mode: 'index', intersect: false },
+                    plugins: {
+                        legend: {
+                            labels: {
+                                color: '#ffffff',
+                                font: { family: 'Poppins', size: 14, weight: '600' }
+                            }
+                        },
+                        tooltip: {
+                            backgroundColor: 'rgba(15, 15, 35, 0.95)',
+                            callbacks: {
+                                label: function(context) {
+                                    let label = context.dataset.label || '';
+                                    let value = context.dataset.type === 'line' ? context.raw / PL_MULTIPLIER : context.raw;
+                                    return ` ${label}: $${Math.floor(value).toLocaleString()}`;
+                                }
+                            }
+                        }
+                    },
+                    scales: {
+                        y: {
+                            grid: { color: 'rgba(255, 255, 255, 0.1)' },
+                            ticks: {
+                                color: '#ffffff',
+                                callback: (v) => {
+                                    if (Math.abs(v) >= 1000000) return (v / 1000000).toFixed(1) + 'M';
+                                    if (Math.abs(v) >= 1000) return (v / 1000).toFixed(0) + 'K';
+                                    return v;
+                                }
+                            }
+                        },
+                        x: { ticks: { color: '#ffffff' } }
+                    }
+                }
+            });
+        }
+        window.onload = initDashboard;
+    </script>
+</body>
+
+</html>
