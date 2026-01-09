@@ -393,6 +393,31 @@
                 padding: 6px 8px;
             }
         }
+
+        #diffOddsContainer th{
+            text-align: center;
+            border: 0.5px solid #ccc;
+            background-color: unset;
+        }
+
+         #diffOddsContainer td{
+            text-align: center;
+            border: 0.5px solid #cccccc40;;
+            background-color: unset;
+            border-radius: unset;
+        }
+
+        #diffOddsContainer table{
+           border-spacing: 0;
+        }
+
+        .border-left {
+            border-left: 4px solid #ccc !important;
+        }
+
+        .border-right {
+            border-right: 4px solid #ccc !important;
+        }
     </style>
 </head>
 
@@ -423,6 +448,58 @@
                         <tbody></tbody>
                     </table>
                 </div>
+            </div>
+        </div>
+
+
+        <div class="simulation-row">
+           <div id="diffOddsContainer">
+                <table>
+                    <thead>
+                        <tr>
+                            <th class="border-left"></th>
+                            <th class="border-left" colspan="2">Partner</th>
+                            <th class="border-left" colspan="2">Client</th>
+                            <th class="border-left border-right" colspan="2">Diff</th>
+                        </tr>
+                        <tr>
+                            <th class="border-left">Client</th>
+                            <th class="border-left">Week</th>
+                            <th>Month</th>
+                            <th class="border-left">Week</th>
+                            <th>Month</th>
+                            <th class="border-left">Week</th>
+                            <th class="border-right">Month</th>
+                        </tr>
+
+
+                        <!-- <tr>
+                            <th></th>
+                            <th colspan="3">Week</th>
+                            <th colspan="3">Month</th>
+                        </tr>
+                        <tr>
+                            <th>Client</th>
+                            <th>Partner</th>
+                            <th>Client</th>
+                            <th>Diff</th>
+                            <th>Partner</th>
+                            <th>Client</th>
+                            <th>Diff</th>
+                        </tr> -->
+                    </thead>
+                    <tbody>
+                          <tr>
+                            <td></td>
+                           <td></td>
+                          <td></td>
+                          <td></td>
+                           <td></td>
+                            <td></td>
+                            <td></td>
+                        </tr>
+                    </tbody>
+                </table>
             </div>
         </div>
 
@@ -511,9 +588,40 @@
         renderChart(clientData);
         renderWeekList(currentEventData); // Use currentEventData
         renderClientList(currentEventData); // Use currentEventData
+        renderDiffList(currentEventData); //Use currentEventData
         handleClearButtonVisibility();
         document.querySelector(".corner-text").innerText = "Last Update: " + currentEventData.lastUpdate;
     } catch (err) { console.error(err); }
+}
+
+function renderDiffList(data) {
+    let tableBody = document.querySelector("#diffOddsContainer tbody");
+    tableBody.innerHTML = ""; // Clear existing rows
+    data.output_diff.forEach(item => {
+        let row = document.createElement("tr");
+        row.innerHTML = `
+            <td class="border-left">${item.client}</td>
+            <td class="border-left" style="${item.partnerPlWeek > 0 ? "color: var(--accent-cyan)" : "color: var(--accent-pink)"}">${item.partnerPlWeek}</td>
+            <td style="${item.partnerPlMonth > 0 ? "color: var(--accent-cyan)" : "color: var(--accent-pink)"}">${item.partnerPlMonth}</td>
+            <td class="border-left"  style="${item.clientPlWeek > 0 ? "color: var(--accent-cyan)" : "color: var(--accent-pink)"}">${item.clientPlWeek}</td>
+            <td style="${item.clientPlMonth > 0 ? "color: var(--accent-cyan)" : "color: var(--accent-pink)"}">${item.clientPlMonth}</td>
+            <td class="border-left"  style="${item.diff_week > 0 ? "color: var(--accent-cyan)" : "color: var(--accent-pink)"}">${item.diff_week}</td>
+            <td class="border-right"  style="${item.diff_month > 0 ? "color: var(--accent-cyan)" : "color: var(--accent-pink)"}">${item.diff_month}</td>
+        `;
+
+
+        //   row.innerHTML = `
+        //     <td>${item.client}</td>
+        //     <td>${item.partnerPlWeek}</td>
+        //     <td>${item.clientPlWeek}</td>
+        //     <td>${item.diff_week}</td>
+
+        //     <td>${item.partnerPlMonth}</td>
+        //     <td>${item.clientPlMonth}</td>
+        //     <td>${item.diff_month}</td>
+        // `;
+        tableBody.appendChild(row);
+    });
 }
 
         function handleEventClick(url) {
