@@ -705,36 +705,36 @@ function renderDiffList(data) {
         }
 
         function updateEvaluation() {
-    const h = parseFloat(document.getElementById('homeScore').value);
-    const a = parseFloat(document.getElementById('awayScore').value);
-    const display = document.getElementById('evaluationResult');
+            const h = parseFloat(document.getElementById('homeScore').value);
+            const a = parseFloat(document.getElementById('awayScore').value);
+            const display = document.getElementById('evaluationResult');
 
-    if (isNaN(h) || isNaN(a)) {
-        display.innerText = "Enter Result";
-        display.className = "eval-status status-pending";
-        return;
-    }
+            if (isNaN(h) || isNaN(a)) {
+                display.innerText = "Enter Result";
+                display.className = "eval-status status-pending";
+                return;
+            }
 
-    // Just update the modal UI for the current active item
-    const isWin = evaluateBet(h, a, activeLine);
-    
-    if (isWin === true) {
-        display.innerText = "WIN";
-        display.className = "eval-status status-win";
-    } else if (isWin === false) {
-        display.innerText = "LOSS";
-        display.className = "eval-status status-loss";
-    } else if (isWin === "half-lose") {
-        display.innerText = "1/2 LOSE";
-        display.className = "eval-status status-loss";
-    } else if (isWin === "half-win") {
-        display.innerText = "1/2 WIN";
-        display.className = "eval-status status-win";
-    } else {
-        display.innerText = "VOID";
-        display.className = "eval-status status-pending";
-    }
-}
+            // Just update the modal UI for the current active item
+            const isWin = evaluateBet(h, a, activeLine);
+            
+            if (isWin === true) {
+                display.innerText = "WIN";
+                display.className = "eval-status status-win";
+            } else if (isWin === false) {
+                display.innerText = "LOSS";
+                display.className = "eval-status status-loss";
+            } else if (isWin === "half-lose") {
+                display.innerText = "1/2 LOSE";
+                display.className = "eval-status status-loss";
+            } else if (isWin === "half-win") {
+                display.innerText = "1/2 WIN";
+                display.className = "eval-status status-win";
+            } else {
+                display.innerText = "VOID";
+                display.className = "eval-status status-pending";
+            }
+        }
 
 // Add this to your event listener for the Apply button
 document.querySelector('.btn-apply').addEventListener('click', function() {
@@ -875,6 +875,7 @@ document.querySelector('.btn-apply').addEventListener('click', function() {
         }
 
         function applyEdit(shouldFinalize = true) {
+            updateEvaluation()
             const h = document.getElementById('homeScore').value;
             const a = document.getElementById('awayScore').value;
             const resText = document.getElementById('evaluationResult').innerText;
