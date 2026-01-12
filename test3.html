@@ -458,18 +458,21 @@
                     <thead>
                         <tr>
                             <th class="border-left"></th>
-                            <th class="border-left" colspan="2">Partner</th>
-                            <th class="border-left" colspan="2">Client</th>
-                            <th class="border-left border-right" colspan="2">Diff</th>
+                            <th class="border-left" colspan="3">Partner</th>
+                            <th class="border-left" colspan="3">Client</th>
+                            <th class="border-left border-right" colspan="3">Diff</th>
                         </tr>
                         <tr>
                             <th class="border-left">Client</th>
                             <th class="border-left">Week</th>
                             <th>Month</th>
+                            <th>Total</th>
                             <th class="border-left">Week</th>
                             <th>Month</th>
+                            <th>Total</th>
                             <th class="border-left">Week</th>
                             <th class="border-right">Month</th>
+                            <th>Total</th>
                         </tr>
 
 
@@ -603,10 +606,17 @@ function renderDiffList(data) {
             <td class="border-left">${item.client}</td>
             <td class="border-left" style="${item.partnerPlWeek > 0 ? "color: var(--accent-cyan)" : "color: var(--accent-pink)"}">${item.partnerPlWeek}</td>
             <td style="${item.partnerPlMonth > 0 ? "color: var(--accent-cyan)" : "color: var(--accent-pink)"}">${item.partnerPlMonth}</td>
+            <td style="${item.partnerPlTotal > 0 ? "color: var(--accent-cyan)" : "color: var(--accent-pink)"}">${item.partnerPlTotal}</td>
+            
+
             <td class="border-left"  style="${item.clientPlWeek > 0 ? "color: var(--accent-cyan)" : "color: var(--accent-pink)"}">${item.clientPlWeek}</td>
             <td style="${item.clientPlMonth > 0 ? "color: var(--accent-cyan)" : "color: var(--accent-pink)"}">${item.clientPlMonth}</td>
+             <td style="${item.clientPlTotal > 0 ? "color: var(--accent-cyan)" : "color: var(--accent-pink)"}">${item.clientPlTotal}</td>
+            
+
             <td class="border-left"  style="${item.diff_week > 0 ? "color: var(--accent-cyan)" : "color: var(--accent-pink)"}">${item.diff_week}</td>
             <td class="border-right"  style="${item.diff_month > 0 ? "color: var(--accent-cyan)" : "color: var(--accent-pink)"}">${item.diff_month}</td>
+            <td class="border-right"  style="${item.diff_total > 0 ? "color: var(--accent-cyan)" : "color: var(--accent-pink)"}">${item.diff_total}</td>
         `;
 
 
