@@ -923,6 +923,7 @@ document.querySelector('.btn-apply').addEventListener('click', function() {
                                 let eventStr = row.home + " vs " + row.away + ": " + row.line;
                                 if (eventStr === activeFullEvent) {
                                     if (row.id && row.id !== "" && !matchingIds.includes(row.id)) {
+                                        row.eval = shortFormResult; // Immediate update for individual rows
                                         matchingIds.push(row.id);
                                     }
                                 }
@@ -961,8 +962,8 @@ document.querySelector('.btn-apply').addEventListener('click', function() {
                                     row.eval = shortFormResult;
                                     calculatePlReal(row);
                                 } 
-                                else if (row.type === "M" && (row.line === "" || !row.line) && row.stakeReal && row.stakeReal !== "0") {
-                                    const siblingEvents = currentRows.filter(r => r.id === row.id && r.home !== "" && r.line !== "");
+                                else if (row.type === "M" && (row.line == "" || !row.line) && row.stakeReal && row.stakeReal !== "0") {
+                                    const siblingEvents = currentRows.filter(r => r.id === row.id && r.home != "" && r.line != "");
                                     const allEvaluated = siblingEvents.every(r => r.eval && r.eval !== "pen");
                                     const hasALoss = siblingEvents.some(r => r.eval === "L");
 
@@ -975,6 +976,11 @@ document.querySelector('.btn-apply').addEventListener('click', function() {
                                     } else {
                                         row.eval = "pen";
                                         row.plReal = 0;
+                                    }
+
+                                    if (row.id == "trade___8296") {
+                                        console.log("Updated M row for trade___8296:", row);
+                                        console.log({allEvaluated: allEvaluated, hasALoss: hasALoss, siblingEvents: siblingEvents})
                                     }
                                 }
                             }
@@ -1026,8 +1032,8 @@ if (currentEventData && currentEventData.results) {
         idGroup.clientPl = totalPl.toFixed(2);
         idGroup.clientPlSimulation = totalPlSimulation.toFixed(2);
         idGroup.clientStakeSimulation = totalStakeSimulation.toFixed(2);
-        console.log(`Updated client ${idGroup.id}: Stake=${idGroup.clientStake}, Pending=${idGroup.clientPendingStake}, PL=${idGroup.clientPl}, SimPL=${idGroup.clientPlSimulation}, SimStake=${idGroup.clientStakeSimulation}`);
-        console.log(idGroup);
+        // console.log(`Updated client ${idGroup.id}: Stake=${idGroup.clientStake}, Pending=${idGroup.clientPendingStake}, PL=${idGroup.clientPl}, SimPL=${idGroup.clientPlSimulation}, SimStake=${idGroup.clientStakeSimulation}`);
+        // console.log(idGroup);
     });
 }
 
