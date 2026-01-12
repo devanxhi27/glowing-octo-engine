@@ -648,6 +648,7 @@ function renderDiffList(data) {
                     <div class="event-card">
                         <div class="event-info">
                            <a href="javascript:void(0)" onclick="handleEventClick('${data.uniqueEventsWithLinks[event]?.league?.url || ""}')">${event}</a>
+                           <p style="font-size: 9px;">${data.uniqueEventsClients[event].join(", ")}</p>
                         </div>
                         <div style="display: flex; align-items: center;">
                             ${resultHtml}
@@ -730,7 +731,7 @@ function renderDiffList(data) {
             } else if (isWin === "half-win") {
                 display.innerText = "1/2 WIN";
                 display.className = "eval-status status-win";
-            } else {
+            } else if (isWin === 'void') {
                 display.innerText = "VOID";
                 display.className = "eval-status status-pending";
             }
@@ -746,7 +747,7 @@ document.querySelector('.btn-apply').addEventListener('click', function() {
     const originalLineMarket = ((activeLine.toLowerCase().includes("corn")) ? "CORNERS" : ((activeLine.toLowerCase().includes("card")) ? "CARDS" : "GOALS"));
 
     // Convert NodeList to Array and filter for matches first
-    const itemsToProcess = Array.from(document.querySelectorAll(".event-info")).filter(itm => {
+    const itemsToProcess = Array.from(document.querySelectorAll(".event-info a")).filter(itm => {
         let eventTitle = itm.innerText.split(": ")[0];
         let itemLine = itm.innerText.split(": ")[1];
         let currentLineMarket = ((itemLine.toLowerCase().includes("corn")) ? "CORNERS" : ((itemLine.toLowerCase().includes("card")) ? "CARDS" : "GOALS"));
@@ -841,7 +842,8 @@ document.querySelector('.btn-apply').addEventListener('click', function() {
             if (l === "away") return a > h;
             if (l === "draw") return a == h;
 
-            if (l.includes('over') || l.includes('under')) {
+            if (l.includes('over_') || l.includes('under_')) {
+                console.log("Evaluating over/under for", currentMarketType);
                 const isOver = l.includes('over');
                 const v = parseFloat(parts.find(p => !isNaN(parseFloat(p))));
                 const total = h + a;
@@ -849,7 +851,7 @@ document.querySelector('.btn-apply').addEventListener('click', function() {
                 if (l.includes('home')) return isOver ? h > v : h < v;
                 if (l.includes('away')) return isOver ? a > v : a < v;
 
-                if (total === v) return null;
+                if (total === v) return 'void';
                 return isOver ? total > v : total < v;
             }
 
@@ -857,7 +859,7 @@ document.querySelector('.btn-apply').addEventListener('click', function() {
                 const v = parseFloat(parts[1]);
                 if (parts[0] === 'home') {
                     const result = h + v;
-                    if (result === a) return null;
+                    if (result === a) return 'void';
                     if (result - a == 0.25) return "half-win";
                     if (result - a == -0.25) return "half-lose";
                     return result - a > 0.25;
@@ -865,7 +867,7 @@ document.querySelector('.btn-apply').addEventListener('click', function() {
                 if (parts[0] === 'away') {
                     // console.log("Handicap away", parts, a, v, a + v)
                     const result = a + v;
-                    if (result === h) return null;
+                    if (result === h) return 'void';
                     if (result - h == 0.25) return "half-win";
                     if (result - h == -0.25) return "half-lose";
                     return result - h > 0.25;
