@@ -615,19 +615,19 @@ function renderDiffList(data) {
         let row = document.createElement("tr");
         row.innerHTML = `
             <td class="border-left">${item.client}</td>
-            <td class="border-left" style="${item.partnerPlWeek > 0 ? "color: var(--accent-cyan)" : "color: var(--accent-pink)"}">${item.partnerPlWeek}</td>
-            <td style="${item.partnerPlMonth > 0 ? "color: var(--accent-cyan)" : "color: var(--accent-pink)"}">${item.partnerPlMonth}</td>
-            <td style="${item.partnerPlTotal > 0 ? "color: var(--accent-cyan)" : "color: var(--accent-pink)"}">${item.partnerPlTotal}</td>
+            <td class="border-left" style="${item.partnerPlWeek > 0 ? "color: var(--accent-cyan)" : ((parseFloat(item.partnerPlWeek)  == 0)?"color: #977b8994;":"color: var(--accent-pink)")}">${item.partnerPlWeek}</td>
+            <td style="${item.partnerPlMonth > 0 ? "color: var(--accent-cyan)" : ((parseFloat(item.partnerPlMonth)  == 0)?"color: #977b8994;":"color: var(--accent-pink)")}">${item.partnerPlMonth}</td>
+            <td style="${item.partnerPlTotal > 0 ? "color: var(--accent-cyan)" : ((parseFloat(item.partnerPlTotal)  == 0)?"color: #977b8994;":"color: var(--accent-pink)")}">${item.partnerPlTotal}</td>
             
 
-            <td class="border-left"  style="${item.clientPlWeek > 0 ? "color: var(--accent-cyan)" : "color: var(--accent-pink)"}">${item.clientPlWeek}</td>
-            <td style="${item.clientPlMonth > 0 ? "color: var(--accent-cyan)" : "color: var(--accent-pink)"}">${item.clientPlMonth}</td>
-             <td style="${item.clientPlTotal > 0 ? "color: var(--accent-cyan)" : "color: var(--accent-pink)"}">${item.clientPlTotal}</td>
+            <td class="border-left" style="${item.clientPlWeek > 0 ? "color: var(--accent-cyan)" : ((parseFloat(item.clientPlWeek)  == 0)?"color: #977b8994;":"color: var(--accent-pink)")}">${item.clientPlWeek}</td>
+            <td style="${item.clientPlMonth > 0 ? "color: var(--accent-cyan)" : ((parseFloat(item.clientPlMonth)  == 0)?"color: #977b8994;":"color: var(--accent-pink)")}">${item.clientPlMonth}</td>
+             <td style="${item.clientPlTotal > 0 ? "color: var(--accent-cyan)" : ((parseFloat(item.clientPlTotal)  == 0)?"color: #977b8994;":"color: var(--accent-pink)")}">${item.clientPlTotal}</td>
             
 
-            <td class="border-left"  style="${item.diff_week > 0 ? "color: var(--accent-cyan)" : "color: var(--accent-pink)"}">${item.diff_week}</td>
-            <td class="border-right"  style="${item.diff_month > 0 ? "color: var(--accent-cyan)" : "color: var(--accent-pink)"}">${item.diff_month}</td>
-            <td class="border-right"  style="${item.diff_total > 0 ? "color: var(--accent-cyan)" : "color: var(--accent-pink)"}">${item.diff_total}</td>
+            <td class="border-left"  style="${item.diff_week > 0 ? "color: var(--accent-cyan)" : ((parseFloat(item.diff_week)  == 0)?"color: #977b8994;":"color: var(--accent-pink)")}">${item.diff_week}</td>
+            <td class="border-right"  style="${item.diff_month > 0 ? "color: var(--accent-cyan)" : ((parseFloat(item.diff_month)  == 0)?"color: #977b8994;":"color: var(--accent-pink)")}">${item.diff_month}</td>
+            <td class="border-right"  style="${item.diff_total > 0 ? "color: var(--accent-cyan)" : ((parseFloat(item.diff_total)  == 0)?"color: #977b8994;":"color: var(--accent-pink)")}">${item.diff_total}</td>
         `;
 
 
