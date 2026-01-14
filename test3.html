@@ -411,6 +411,10 @@
             background-color: rgba(20, 30, 60, 0.8);;
         }
 
+        .total-row {
+            background-color: rgba(20, 30, 60, 0.8);
+        }
+
          #diffOddsContainer td{
             text-align: center;
             border: 0.5px solid #cccccc40;;
@@ -642,6 +646,26 @@ function renderDiffList(data) {
         // `;
         tableBody.appendChild(row);
     });
+
+    let total_row = document.createElement("tr");
+    total_row.classList.add("total-row");
+    total_row.innerHTML = `
+        <td class="border-left">TOTAL</td>
+        <td class="border-left" style="${data.total_output_diff.partnerPlWeek > 0 ? "color: var(--accent-cyan)" : ((parseFloat(data.total_output_diff.partnerPlWeek)  == 0)?"color: #977b8994;":"color: var(--accent-pink)")}">${data.total_output_diff.partnerPlWeek}</td>
+        <td style="${data.total_output_diff.partnerPlMonth > 0 ? "color: var(--accent-cyan)" : ((parseFloat(data.total_output_diff.partnerPlMonth)  == 0)?"color: #977b8994;":"color: var(--accent-pink)")}">${data.total_output_diff.partnerPlMonth}</td>
+        <td style="${data.total_output_diff.partnerPlTotal > 0 ? "color: var(--accent-cyan)" : ((parseFloat(data.total_output_diff.partnerPlTotal)  == 0)?"color: #977b8994;":"color: var(--accent-pink)")}">${data.total_output_diff.partnerPlTotal}</td>
+        
+
+        <td class="border-left" style="${data.total_output_diff.clientPlWeek > 0 ? "color: var(--accent-cyan)" : ((parseFloat(data.total_output_diff.clientPlWeek)  == 0)?"color: #977b8994;":"color: var(--accent-pink)")}">${data.total_output_diff.clientPlWeek}</td>
+        <td style="${data.total_output_diff.clientPlMonth > 0 ? "color: var(--accent-cyan)" : ((parseFloat(data.total_output_diff.clientPlMonth)  == 0)?"color: #977b8994;":"color: var(--accent-pink)")}">${data.total_output_diff.clientPlMonth}</td>
+            <td style="${data.total_output_diff.clientPlTotal > 0 ? "color: var(--accent-cyan)" : ((parseFloat(data.total_output_diff.clientPlTotal)  == 0)?"color: #977b8994;":"color: var(--accent-pink)")}">${data.total_output_diff.clientPlTotal}</td>
+        
+
+        <td class="border-left"  style="${data.total_output_diff.diff_week > 0 ? "color: var(--accent-cyan)" : ((parseFloat(data.total_output_diff.diff_week)  == 0)?"color: #977b8994;":"color: var(--accent-pink)")}">${data.total_output_diff.diff_week}</td>
+        <td class="border-right"  style="${data.total_output_diff.diff_month > 0 ? "color: var(--accent-cyan)" : ((parseFloat(data.total_output_diff.diff_month)  == 0)?"color: #977b8994;":"color: var(--accent-pink)")}">${data.total_output_diff.diff_month}</td>
+        <td class="border-right"  style="${data.total_output_diff.diff_total > 0 ? "color: var(--accent-cyan)" : ((parseFloat(data.total_output_diff.diff_total)  == 0)?"color: #977b8994;":"color: var(--accent-pink)")}">${data.total_output_diff.diff_total}</td>
+    `;
+    tableBody.appendChild(total_row);
 }
 
         function handleEventClick(url) {
