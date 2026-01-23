@@ -123,7 +123,6 @@
             position: sticky;
             top: 0;
             background: rgba(20, 30, 60, 0.8);
-            z-index: 10;
         }
 
         td {
@@ -202,7 +201,6 @@
             display: none;
             justify-content: center;
             align-items: center;
-            z-index: 2000;
             backdrop-filter: blur(5px);
         }
 
@@ -325,6 +323,13 @@
             font-size: 0.85rem;
             border: 1px solid var(--glass-border);
         }
+        
+        @media (max-width: 1100px) {
+            .simulation-row {
+                flex-direction: column;
+            }
+
+         }
 
         /* MOBILE RESPONSIVENESS - Added without changing original desktop styles */
         @media (max-width: 768px) {
@@ -334,6 +339,7 @@
 
             .container {
                 gap: 15px;
+                display: grid;
             }
 
             .chart-card {
@@ -343,10 +349,12 @@
 
             .simulation-row {
                 flex-direction: column; /* Stacks the two cards vertically */
+                width: 75%;
             }
 
             .sim-card {
-                min-width: 100%;
+                /* min-width: 100%; */
+                max-width: 650;
                 padding: 15px;
             }
 
@@ -396,95 +404,90 @@
 
 
 
+        #diffOddsContainer th{
+            text-align: center;
+            border: 0.5px solid #ccc;
+            background-color: rgba(20, 30, 60, 0.8);;
+        }
 
-        /* Container for each row */
-.client-event-item {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    background: rgba(255, 255, 255, 0.05);
-    margin-bottom: 10px;
-    padding: 12px 15px;
-    border-radius: 8px;
-    border: 1px solid rgba(255, 255, 255, 0.1);
+        .total-row {
+            background-color: rgba(20, 30, 60, 0.8);
+        }
+
+         #diffOddsContainer td{
+            text-align: center;
+            border: 0.5px solid #cccccc40;;
+            background-color: unset;
+            border-radius: unset;
+        }
+
+        #diffOddsContainer table{
+           border-spacing: 0;
+        }
+
+        .border-left {
+            border-left: 4px solid #ccc !important;
+        }
+
+        .border-right {
+            border-right: 4px solid #ccc !important;
+        }
+
+        /* Target the containers where the scrollbar is active */
+        #weekContainer, 
+        #clientContainer {
+            /* Required for the scrollbar to stay inside the rounded corners */
+            overflow-y: auto;
+        }
+
+        /* Chrome, Edge, and Safari */
+        #weekContainer::-webkit-scrollbar, 
+        #clientContainer::-webkit-scrollbar {
+            width: 12px; /* We increase total width to allow for 'padding' space */
+        }
+
+        #weekContainer::-webkit-scrollbar-track, 
+        #clientContainer::-webkit-scrollbar-track {
+            background: transparent; 
+            /* Important: gives the thumb space to breathe near the rounded corners */
+            margin: 15px 0; 
+        }
+
+        #weekContainer::-webkit-scrollbar-thumb, 
+        #clientContainer::-webkit-scrollbar-thumb {
+            /* This gray matches your previous request */
+            background-color: rgba(255, 255, 255, 0.15); 
+            
+            /* These three lines are the magic fix: */
+            border: 4px solid transparent; /* Acts as 'padding' to push it inside */
+            background-clip: padding-box; /* Ensures color only fills inside the border */
+            border-radius: 10px; /* Makes the thumb itself pill-shaped */
+        }
+
+        #weekContainer::-webkit-scrollbar-thumb:hover, 
+        #clientContainer::-webkit-scrollbar-thumb:hover {
+            background-color: rgba(255, 255, 255, 0.3); 
+        }
+
+
+        /* Ensure the second modal is always on top */
+#editModal {
+    z-index: 1060 !important; 
 }
 
-.event-text {
-    flex: 1;
-    font-size: 0.9rem;
+/* Ensure the second modal's backdrop is also higher */
+.modal-backdrop:nth-of-type(2) {
+    z-index: 1055 !important;
 }
-
-/* Input Styles */
-.input-group {
-    display: flex;
-    gap: 15px;
-    margin: 0 20px;
-}
-
-.input-group label {
-    display: flex;
-    align-items: center;
-    gap: 5px;
-    font-weight: bold;
-    font-size: 1.1rem;
-}
-
-.score-input {
-    width: 45px;
-    background: transparent;
-    border: 2px solid #555;
-    border-radius: 4px;
-    color: white;
-    text-align: center;
-    padding: 4px;
-}
-
-/* Buttons Logic */
-.action-buttons {
-    display: flex;
-    gap: 10px;
-    opacity: 0; /* Hidden by default */
-    pointer-events: none;
-    transition: opacity 0.2s ease;
-}
-
-/* Show buttons when the parent has the .is-editing class */
-.client-event-item.is-editing .action-buttons {
-    opacity: 1;
-    pointer-events: auto;
-}
-
-.btn-apply, .btn-cancel {
-    background: none;
-    border: 2px solid;
-    border-radius: 6px;
-    cursor: pointer;
-    padding: 5px 10px;
-    font-weight: bold;
-    font-size: 1.2rem;
-}
-
-.btn-apply {
-    color: #00ff00;
-    border-color: #00ff00;
-}
-
-.btn-cancel {
-    color: #ff4d4d;
-    border-color: #ff4d4d;
-}
-
-.btn-apply:hover { background: rgba(0, 255, 0, 0.1); }
-.btn-cancel:hover { background: rgba(255, 77, 77, 0.1); }
     </style>
 </head>
 
 <body>
 
     <div class="container">
-        <h2>Performance Analysis</h2>
-       
-
+        <div class="simulation-row">
+            <h2>Performance Analysis</h2>
+        </div>
         <div class="simulation-row">
             <div class="sim-card" id="weekContainer">
                 <h1 id="pendingHeader">Pending Events</h1>
@@ -506,6 +509,61 @@
                         <tbody></tbody>
                     </table>
                 </div>
+            </div>
+        </div>
+
+
+        <div class="simulation-row" style="display: block;">
+           <div id="diffOddsContainer">
+                <table>
+                    <thead>
+                        <tr>
+                            <th class="border-left"></th>
+                            <th class="border-left" colspan="3">Partner</th>
+                            <th class="border-left" colspan="3">Client</th>
+                            <th class="border-left border-right" colspan="3">Diff</th>
+                        </tr>
+                        <tr>
+                            <th class="border-left">Client</th>
+                            <th class="border-left">Week</th>
+                            <th>Month</th>
+                            <th>Total</th>
+                            <th class="border-left">Week</th>
+                            <th>Month</th>
+                            <th>Total</th>
+                            <th class="border-left">Week</th>
+                            <th class="border-right">Month</th>
+                            <th>Total</th>
+                        </tr>
+
+
+                        <!-- <tr>
+                            <th></th>
+                            <th colspan="3">Week</th>
+                            <th colspan="3">Month</th>
+                        </tr>
+                        <tr>
+                            <th>Client</th>
+                            <th>Partner</th>
+                            <th>Client</th>
+                            <th>Diff</th>
+                            <th>Partner</th>
+                            <th>Client</th>
+                            <th>Diff</th>
+                        </tr> -->
+                    </thead>
+                    <tbody>
+                          <tr>
+                            <td></td>
+                           <td></td>
+                          <td></td>
+                          <td></td>
+                           <td></td>
+                            <td></td>
+                            <td></td>
+                        </tr>
+                    </tbody>
+                </table>
             </div>
         </div>
 
@@ -550,7 +608,7 @@
     </div>
 
     <div class="modal-overlay" id="clientEventsModal">
-        <div class="modal-content" style="max-width: 900px;">
+        <div class="modal-content" style="max-width: 500px;">
             <div class="modal-header" id="clientModalTitle" style="color: var(--accent-cyan); font-weight:700;">Client
                 Events</div>
             <div id="clientEventsList" style="margin: 20px 0; max-height: 300px; overflow-y: auto; text-align: left;">
@@ -594,9 +652,66 @@
         renderChart(clientData);
         renderWeekList(currentEventData); // Use currentEventData
         renderClientList(currentEventData); // Use currentEventData
+        renderDiffList(currentEventData); //Use currentEventData
         handleClearButtonVisibility();
         document.querySelector(".corner-text").innerText = "Last Update: " + currentEventData.lastUpdate;
     } catch (err) { console.error(err); }
+}
+
+function renderDiffList(data) {
+    let tableBody = document.querySelector("#diffOddsContainer tbody");
+    tableBody.innerHTML = ""; // Clear existing rows
+    data.output_diff.forEach(item => {
+        let row = document.createElement("tr");
+        row.innerHTML = `
+            <td class="border-left">${item.client}</td>
+            <td class="border-left" style="${item.partnerPlWeek > 0 ? "color: var(--accent-cyan)" : ((parseFloat(item.partnerPlWeek)  == 0)?"color: #977b8994;":"color: var(--accent-pink)")}">${item.partnerPlWeek}</td>
+            <td style="${item.partnerPlMonth > 0 ? "color: var(--accent-cyan)" : ((parseFloat(item.partnerPlMonth)  == 0)?"color: #977b8994;":"color: var(--accent-pink)")}">${item.partnerPlMonth}</td>
+            <td style="${item.partnerPlTotal > 0 ? "color: var(--accent-cyan)" : ((parseFloat(item.partnerPlTotal)  == 0)?"color: #977b8994;":"color: var(--accent-pink)")}">${item.partnerPlTotal}</td>
+            
+
+            <td class="border-left" style="${item.clientPlWeek > 0 ? "color: var(--accent-cyan)" : ((parseFloat(item.clientPlWeek)  == 0)?"color: #977b8994;":"color: var(--accent-pink)")}">${item.clientPlWeek}</td>
+            <td style="${item.clientPlMonth > 0 ? "color: var(--accent-cyan)" : ((parseFloat(item.clientPlMonth)  == 0)?"color: #977b8994;":"color: var(--accent-pink)")}">${item.clientPlMonth}</td>
+             <td style="${item.clientPlTotal > 0 ? "color: var(--accent-cyan)" : ((parseFloat(item.clientPlTotal)  == 0)?"color: #977b8994;":"color: var(--accent-pink)")}">${item.clientPlTotal}</td>
+            
+
+            <td class="border-left"  style="${item.diff_week > 0 ? "color: var(--accent-cyan)" : ((parseFloat(item.diff_week)  == 0)?"color: #977b8994;":"color: var(--accent-pink)")}">${item.diff_week}</td>
+            <td class="border-right"  style="${item.diff_month > 0 ? "color: var(--accent-cyan)" : ((parseFloat(item.diff_month)  == 0)?"color: #977b8994;":"color: var(--accent-pink)")}">${item.diff_month}</td>
+            <td class="border-right"  style="${item.diff_total > 0 ? "color: var(--accent-cyan)" : ((parseFloat(item.diff_total)  == 0)?"color: #977b8994;":"color: var(--accent-pink)")}">${item.diff_total}</td>
+        `;
+
+        //   row.innerHTML = `
+        //     <td>${item.client}</td>
+        //     <td>${item.partnerPlWeek}</td>
+        //     <td>${item.clientPlWeek}</td>
+        //     <td>${item.diff_week}</td>
+
+        //     <td>${item.partnerPlMonth}</td>
+        //     <td>${item.clientPlMonth}</td>
+        //     <td>${item.diff_month}</td>
+        // `;
+        tableBody.appendChild(row);
+    });
+
+    let total_row = document.createElement("tr");
+    total_row.classList.add("total-row");
+    total_row.innerHTML = `
+        <td class="border-left">TOTAL</td>
+        <td class="border-left" style="${data.total_output_diff.partnerPlWeek > 0 ? "color: var(--accent-cyan)" : ((parseFloat(data.total_output_diff.partnerPlWeek)  == 0)?"color: #977b8994;":"color: var(--accent-pink)")}">${data.total_output_diff.partnerPlWeek}</td>
+        <td style="${data.total_output_diff.partnerPlMonth > 0 ? "color: var(--accent-cyan)" : ((parseFloat(data.total_output_diff.partnerPlMonth)  == 0)?"color: #977b8994;":"color: var(--accent-pink)")}">${data.total_output_diff.partnerPlMonth}</td>
+        <td style="${data.total_output_diff.partnerPlTotal > 0 ? "color: var(--accent-cyan)" : ((parseFloat(data.total_output_diff.partnerPlTotal)  == 0)?"color: #977b8994;":"color: var(--accent-pink)")}">${data.total_output_diff.partnerPlTotal}</td>
+        
+
+        <td class="border-left" style="${data.total_output_diff.clientPlWeek > 0 ? "color: var(--accent-cyan)" : ((parseFloat(data.total_output_diff.clientPlWeek)  == 0)?"color: #977b8994;":"color: var(--accent-pink)")}">${data.total_output_diff.clientPlWeek}</td>
+        <td style="${data.total_output_diff.clientPlMonth > 0 ? "color: var(--accent-cyan)" : ((parseFloat(data.total_output_diff.clientPlMonth)  == 0)?"color: #977b8994;":"color: var(--accent-pink)")}">${data.total_output_diff.clientPlMonth}</td>
+            <td style="${data.total_output_diff.clientPlTotal > 0 ? "color: var(--accent-cyan)" : ((parseFloat(data.total_output_diff.clientPlTotal)  == 0)?"color: #977b8994;":"color: var(--accent-pink)")}">${data.total_output_diff.clientPlTotal}</td>
+        
+
+        <td class="border-left"  style="${data.total_output_diff.diff_week > 0 ? "color: var(--accent-cyan)" : ((parseFloat(data.total_output_diff.diff_week)  == 0)?"color: #977b8994;":"color: var(--accent-pink)")}">${data.total_output_diff.diff_week}</td>
+        <td class="border-right"  style="${data.total_output_diff.diff_month > 0 ? "color: var(--accent-cyan)" : ((parseFloat(data.total_output_diff.diff_month)  == 0)?"color: #977b8994;":"color: var(--accent-pink)")}">${data.total_output_diff.diff_month}</td>
+        <td class="border-right"  style="${data.total_output_diff.diff_total > 0 ? "color: var(--accent-cyan)" : ((parseFloat(data.total_output_diff.diff_total)  == 0)?"color: #977b8994;":"color: var(--accent-pink)")}">${data.total_output_diff.diff_total}</td>
+    `;
+    tableBody.appendChild(total_row);
 }
 
         function handleEventClick(url) {
@@ -623,6 +738,7 @@
                     <div class="event-card">
                         <div class="event-info">
                            <a href="javascript:void(0)" onclick="handleEventClick('${data.uniqueEventsWithLinks[event]?.league?.url || ""}')">${event}</a>
+                           <p style="font-size: 9px;">${data.uniqueEventsClients[event].join(", ")}</p>
                         </div>
                         <div style="display: flex; align-items: center;">
                             ${resultHtml}
@@ -680,36 +796,36 @@
         }
 
         function updateEvaluation() {
-    const h = parseFloat(document.getElementById('homeScore').value);
-    const a = parseFloat(document.getElementById('awayScore').value);
-    const display = document.getElementById('evaluationResult');
+            const h = parseFloat(document.getElementById('homeScore').value);
+            const a = parseFloat(document.getElementById('awayScore').value);
+            const display = document.getElementById('evaluationResult');
 
-    if (isNaN(h) || isNaN(a)) {
-        display.innerText = "Enter Result";
-        display.className = "eval-status status-pending";
-        return;
-    }
+            if (isNaN(h) || isNaN(a)) {
+                display.innerText = "Enter Result";
+                display.className = "eval-status status-pending";
+                return;
+            }
 
-    // Just update the modal UI for the current active item
-    const isWin = evaluateBet(h, a, activeLine);
-    
-    if (isWin === true) {
-        display.innerText = "WIN";
-        display.className = "eval-status status-win";
-    } else if (isWin === false) {
-        display.innerText = "LOSS";
-        display.className = "eval-status status-loss";
-    } else if (isWin === "half-lose") {
-        display.innerText = "1/2 LOSE";
-        display.className = "eval-status status-loss";
-    } else if (isWin === "half-win") {
-        display.innerText = "1/2 WIN";
-        display.className = "eval-status status-win";
-    } else {
-        display.innerText = "VOID";
-        display.className = "eval-status status-pending";
-    }
-}
+            // Just update the modal UI for the current active item
+            const isWin = evaluateBet(h, a, activeLine);
+            
+            if (isWin === true) {
+                display.innerText = "WIN";
+                display.className = "eval-status status-win";
+            } else if (isWin === false) {
+                display.innerText = "LOSS";
+                display.className = "eval-status status-loss";
+            } else if (isWin === "half-lose") {
+                display.innerText = "1/2 LOSE";
+                display.className = "eval-status status-loss";
+            } else if (isWin === "half-win") {
+                display.innerText = "1/2 WIN";
+                display.className = "eval-status status-win";
+            } else if (isWin === 'void') {
+                display.innerText = "VOID";
+                display.className = "eval-status status-pending";
+            }
+        }
 
 // Add this to your event listener for the Apply button
 document.querySelector('.btn-apply').addEventListener('click', function() {
@@ -721,7 +837,7 @@ document.querySelector('.btn-apply').addEventListener('click', function() {
     const originalLineMarket = ((activeLine.toLowerCase().includes("corn")) ? "CORNERS" : ((activeLine.toLowerCase().includes("card")) ? "CARDS" : "GOALS"));
 
     // Convert NodeList to Array and filter for matches first
-    const itemsToProcess = Array.from(document.querySelectorAll(".event-info")).filter(itm => {
+    const itemsToProcess = Array.from(document.querySelectorAll(".event-info a")).filter(itm => {
         let eventTitle = itm.innerText.split(": ")[0];
         let itemLine = itm.innerText.split(": ")[1];
         let currentLineMarket = ((itemLine.toLowerCase().includes("corn")) ? "CORNERS" : ((itemLine.toLowerCase().includes("card")) ? "CARDS" : "GOALS"));
@@ -816,7 +932,8 @@ document.querySelector('.btn-apply').addEventListener('click', function() {
             if (l === "away") return a > h;
             if (l === "draw") return a == h;
 
-            if (l.includes('over') || l.includes('under')) {
+            if (l.includes('over_') || l.includes('under_')) {
+                console.log("Evaluating over/under for", currentMarketType);
                 const isOver = l.includes('over');
                 const v = parseFloat(parts.find(p => !isNaN(parseFloat(p))));
                 const total = h + a;
@@ -824,7 +941,7 @@ document.querySelector('.btn-apply').addEventListener('click', function() {
                 if (l.includes('home')) return isOver ? h > v : h < v;
                 if (l.includes('away')) return isOver ? a > v : a < v;
 
-                if (total === v) return null;
+                if (total === v) return 'void';
                 return isOver ? total > v : total < v;
             }
 
@@ -832,7 +949,7 @@ document.querySelector('.btn-apply').addEventListener('click', function() {
                 const v = parseFloat(parts[1]);
                 if (parts[0] === 'home') {
                     const result = h + v;
-                    if (result === a) return null;
+                    if (result === a) return 'void';
                     if (result - a == 0.25) return "half-win";
                     if (result - a == -0.25) return "half-lose";
                     return result - a > 0.25;
@@ -840,7 +957,7 @@ document.querySelector('.btn-apply').addEventListener('click', function() {
                 if (parts[0] === 'away') {
                     // console.log("Handicap away", parts, a, v, a + v)
                     const result = a + v;
-                    if (result === h) return null;
+                    if (result === h) return 'void';
                     if (result - h == 0.25) return "half-win";
                     if (result - h == -0.25) return "half-lose";
                     return result - h > 0.25;
@@ -850,6 +967,7 @@ document.querySelector('.btn-apply').addEventListener('click', function() {
         }
 
         function applyEdit(shouldFinalize = true) {
+            updateEvaluation()
             const h = document.getElementById('homeScore').value;
             const a = document.getElementById('awayScore').value;
             const resText = document.getElementById('evaluationResult').innerText;
@@ -885,6 +1003,7 @@ document.querySelector('.btn-apply').addEventListener('click', function() {
                                 let eventStr = row.home + " vs " + row.away + ": " + row.line;
                                 if (eventStr === activeFullEvent) {
                                     if (row.id && row.id !== "" && !matchingIds.includes(row.id)) {
+                                        row.eval = shortFormResult; // Immediate update for individual rows
                                         matchingIds.push(row.id);
                                     }
                                 }
@@ -923,8 +1042,8 @@ document.querySelector('.btn-apply').addEventListener('click', function() {
                                     row.eval = shortFormResult;
                                     calculatePlReal(row);
                                 } 
-                                else if (row.type === "M" && (row.line === "" || !row.line) && row.stakeReal && row.stakeReal !== "0") {
-                                    const siblingEvents = currentRows.filter(r => r.id === row.id && r.home !== "" && r.line !== "");
+                                else if (row.type === "M" && (row.line == "" || !row.line) && row.stakeReal && row.stakeReal !== "0" && row.eval == "pen") {
+                                    const siblingEvents = currentRows.filter(r => r.id === row.id && r.home != "" && r.line != "");
                                     const allEvaluated = siblingEvents.every(r => r.eval && r.eval !== "pen");
                                     const hasALoss = siblingEvents.some(r => r.eval === "L");
 
@@ -989,6 +1108,7 @@ if (currentEventData && currentEventData.results) {
         idGroup.clientPlSimulation = totalPlSimulation.toFixed(2);
         idGroup.clientStakeSimulation = totalStakeSimulation.toFixed(2);
         console.log(`Updated client ${idGroup.id}: Stake=${idGroup.clientStake}, Pending=${idGroup.clientPendingStake}, PL=${idGroup.clientPl}, SimPL=${idGroup.clientPlSimulation}, SimStake=${idGroup.clientStakeSimulation}`);
+        console.log(idGroup);
     });
 }
 
@@ -1057,58 +1177,52 @@ if (currentEventData && currentEventData.results) {
         }
 
         function openClientModal(events, clientId) {
+            const data = currentEventData;
+
             const listContainer = document.getElementById('clientEventsList');
             document.getElementById('clientModalTitle').innerText = `Pending for: ${clientId}`;
 
             if (!events || events.length === 0) {
                 listContainer.innerHTML = "<p style='text-align:center; opacity:0.5;'>No events found.</p>";
             } else {
-                listContainer.innerHTML = events.map((event, index) => `
-                    <div class="client-event-item" data-index="${index}">
-                        <span class="event-text">${event}</span>
-                        <div class="input-group">
-                            <label>H <input type="number" class="score-input input-home" placeholder="0"></label>
-                            <label>A <input type="number" class="score-input input-away" placeholder="0"></label>
-                        </div>
-                        <div class="action-buttons">
-                            <button class="btn-apply" onclick="handleApply(${index})">✔</button>
-                            <button class="btn-cancel" onclick="handleCancel(${index})">✖</button>
-                        </div>
-                    </div>
-                `).join('');
+                // listContainer.innerHTML = events.map(event => `
+                //     <div class="client-event-item" onclick="openModal('${event.replace(/'/g, "\\'")}')">
+                //         ${event}
+                //     </div>
+                // `).join('');
+
+                console.log({clientId: clientId});
+                // // Try out the other formatting
+                listContainer.innerHTML = data.uniqueEvents.map((event) => {
+                    if (data.uniqueEventsClients[event].includes(clientId)) {
+                        const saved = eventsWithResults[event];
+                        let resultHtml = "";
+
+                        if (saved) {
+                            const color = saved.result === "WIN" || saved.result === "1/2 WIN" ? "var(--accent-cyan)" :
+                                saved.result === "LOSS" || saved.result === "1/2 LOSE" ? "var(--accent-pink)" : "#ccc";
+                            resultHtml = `<span class="event-result-text" style="color: ${color}">${saved.result} (${saved.score})</span>`;
+                        }
+
+                        return `
+                            <div class="event-card">
+                                <div class="event-info">
+                                <a href="javascript:void(0)" onclick="handleEventClick('${data.uniqueEventsWithLinks[event]?.league?.url || ""}')">${event}</a>
+                                <p style="font-size: 9px;">${data.uniqueEventsClients[event].join(", ")}</p>
+                                </div>
+                                <div style="display: flex; align-items: center;">
+                                    ${resultHtml}
+                                    <button class="edit-btn" onclick="openModal('${event.replace(/'/g, "\\'")}')">Edit</button>
+                                </div>
+                            </div>
+                        `;
+                        }
+                }).join('');
+                    
+                
             }
             document.getElementById('clientEventsModal').style.display = 'flex';
         }
-
-        // Logic to handle saving (Apply)
-        function handleApply(index) {
-            const row = document.querySelector(`.client-event-item[data-index="${index}"]`);
-            const inputs = row.querySelectorAll('input');
-            console.log(`Applying scores for event ${index}: H-${inputs[0].value}, A-${inputs[1].value}`);
-            // Hide buttons after apply
-            row.classList.remove('is-editing');
-
-            applyEdit();
-            row.querySelector('.input-home').setAttribute("id", "");
-            row.querySelector('.input-away').setAttribute("id", "");
-        }
-
-        // Logic to handle resetting (Cancel)
-        function handleCancel(index) {
-            const row = document.querySelector(`.client-event-item[data-index="${index}"]`);
-            const inputs = row.querySelectorAll('input');
-            inputs.forEach(input => input.value = ""); // Clear inputs
-            row.classList.remove('is-editing');
-        }
-
-        // Event delegation to show buttons when an input is focused or changed
-        document.getElementById('clientEventsList').addEventListener('input', (e) => {
-            if (e.target.classList.contains('score-input')) {
-                e.target.closest('.client-event-item').classList.add('is-editing');
-                e.target.closest('.client-event-item').querySelector('.input-home').setAttribute("id", "homeScore");
-                e.target.closest('.client-event-item').querySelector('.input-away').setAttribute("id", "awayScore");
-            }
-        });
 
         function closeClientModal() {
             document.getElementById('clientEventsModal').style.display = 'none';
