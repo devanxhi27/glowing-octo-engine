@@ -123,7 +123,6 @@
             position: sticky;
             top: 0;
             background: rgba(20, 30, 60, 0.8);
-            z-index: 10;
         }
 
         td {
@@ -202,7 +201,6 @@
             display: none;
             justify-content: center;
             align-items: center;
-            z-index: 2000;
             backdrop-filter: blur(5px);
         }
 
@@ -355,7 +353,8 @@
             }
 
             .sim-card {
-                min-width: 100%;
+                /* min-width: 100%; */
+                max-width: 650;
                 padding: 15px;
             }
 
@@ -469,6 +468,17 @@
         #clientContainer::-webkit-scrollbar-thumb:hover {
             background-color: rgba(255, 255, 255, 0.3); 
         }
+
+
+        /* Ensure the second modal is always on top */
+#editModal {
+    z-index: 1060 !important; 
+}
+
+/* Ensure the second modal's backdrop is also higher */
+.modal-backdrop:nth-of-type(2) {
+    z-index: 1055 !important;
+}
     </style>
 </head>
 
@@ -592,7 +602,7 @@
 
             <div style="display: flex; gap: 10px;">
                 <button class="btn btn-close" onclick="closeModal()">Close</button>
-                <button class="btn btn-apply" onclick="applyEdit()">Apply Result</button>
+                <button class="btn btn-apply" onclick="applyEdit(true)">Apply Result</button>
             </div>
         </div>
     </div>
@@ -956,7 +966,7 @@ document.querySelector('.btn-apply').addEventListener('click', function() {
             return null;
         }
 
-        function applyEdit(shouldFinalize = true) {
+        async function applyEdit(shouldFinalize = true) {
             updateEvaluation()
             const h = document.getElementById('homeScore').value;
             const a = document.getElementById('awayScore').value;
@@ -1056,54 +1066,114 @@ document.querySelector('.btn-apply').addEventListener('click', function() {
 
             // NEW Step 4: Re-calculate Client-level Totals for the Cache
            // NEW Step 4: Re-calculate Client-level Totals safely
-if (currentEventData && currentEventData.results) {
-    currentEventData.results.forEach(idGroup => {
-        let totalStake = 0;
-        let totalPending = 0;
-        let totalPl = 0;
-        let totalPlSimulation = 0;
-        let totalStakeSimulation = 0;
+        if (currentEventData && currentEventData.results) {
+            currentEventData.results.forEach(idGroup => {
+                let totalStake = 0;
+                let totalPending = 0;
+                let totalPl = 0;
+                let totalPlSimulation = 0;
+                let totalStakeSimulation = 0;
 
-        if (idGroup.rows && Array.isArray(idGroup.rows)) {
-            idGroup.rows.forEach(row => {
-                if ((row.type === "" || row.type === "M") && (row.line === "" || row.type === "")) {
-                    
-                    // REAL TOTALS
-                    const s = parseFloat(row.stakeReal) || 0;
-                    const p = parseFloat(row.plReal) || 0;
-                    totalStake += s;
-                    if (row.eval === "pen") {
-                        totalPending += s;
-                    } else {
-                        totalPl += p;
-                    }
+                if (idGroup.rows && Array.isArray(idGroup.rows)) {
+                    idGroup.rows.forEach(row => {
+                        if ((row.type === "" || row.type === "M") && (row.line === "" || row.type === "")) {
+                            
+                            // REAL TOTALS
+                            const s = parseFloat(row.stakeReal) || 0;
+                            const p = parseFloat(row.plReal) || 0;
+                            totalStake += s;
+                            if (row.eval === "pen") {
+                                totalPending += s;
+                            } else {
+                                totalPl += p;
+                            }
 
-                    // SIMULATION TOTALS 
-                    // Use simulation stake if it exists, otherwise fall back to real stake
-                    const sSim = parseFloat(row.stakeSimulation) || s; 
-                    const pSim = parseFloat(row.plSimulation) || 0;
-                    
-                    totalStakeSimulation += sSim;
-                    // Only add to PL if it's not pending
-                    if (row.eval !== "pen") {
-                        totalPlSimulation += pSim;
-                    }
+                            // SIMULATION TOTALS 
+                            // Use simulation stake if it exists, otherwise fall back to real stake
+                            const sSim = parseFloat(row.stakeSimulation) || s; 
+                            const pSim = parseFloat(row.plSimulation) || 0;
+                            
+                            totalStakeSimulation += sSim;
+                            // Only add to PL if it's not pending
+                            if (row.eval !== "pen") {
+                                totalPlSimulation += pSim;
+                            }
+                        }
+                    });
                 }
+
+                idGroup.clientStake = totalStake.toFixed(2);
+                idGroup.clientPendingStake = totalPending.toFixed(2);
+                idGroup.clientPl = totalPl.toFixed(2);
+                idGroup.clientPlSimulation = totalPlSimulation.toFixed(2);
+                idGroup.clientStakeSimulation = totalStakeSimulation.toFixed(2);
+                console.log(`Updated client ${idGroup.id}: Stake=${idGroup.clientStake}, Pending=${idGroup.clientPendingStake}, PL=${idGroup.clientPl}, SimPL=${idGroup.clientPlSimulation}, SimStake=${idGroup.clientStakeSimulation}`);
+                console.log(idGroup);
+                let pendingRows = idGroup.rows.filter(itm => itm.eval == "pen");
+                console.log({pendingRows: pendingRows});
+            
             });
+
+                        currentEventData.results.forEach(idGroup => {
+                let totalStake = 0;
+                let totalPending = 0;
+                let totalPl = 0;
+                let totalPlSimulation = 0;
+                let totalStakeSimulation = 0;
+
+                if (idGroup.rows && Array.isArray(idGroup.rows)) {
+                    idGroup.rows.forEach(row => {
+                        if ((row.type === "" || row.type === "M") && (row.line === "" || row.type === "")) {
+                            
+                            // REAL TOTALS
+                            const s = parseFloat(row.stakeReal) || 0;
+                            const p = parseFloat(row.plReal) || 0;
+                            totalStake += s;
+                            if (row.eval === "pen") {
+                                totalPending += s;
+                            } else {
+                                totalPl += p;
+                            }
+
+                            // SIMULATION TOTALS 
+                            // Use simulation stake if it exists, otherwise fall back to real stake
+                            const sSim = parseFloat(row.stakeSimulation) || s; 
+                            const pSim = parseFloat(row.plSimulation) || 0;
+                            
+                            totalStakeSimulation += sSim;
+                            // Only add to PL if it's not pending
+                            if (row.eval !== "pen") {
+                                totalPlSimulation += pSim;
+                            }
+                        }
+                    });
+                }
+
+                idGroup.clientStake = totalStake.toFixed(2);
+                idGroup.clientPendingStake = totalPending.toFixed(2);
+                idGroup.clientPl = totalPl.toFixed(2);
+                idGroup.clientPlSimulation = totalPlSimulation.toFixed(2);
+                idGroup.clientStakeSimulation = totalStakeSimulation.toFixed(2);
+                console.log(`Updated client ${idGroup.id}: Stake=${idGroup.clientStake}, Pending=${idGroup.clientPendingStake}, PL=${idGroup.clientPl}, SimPL=${idGroup.clientPlSimulation}, SimStake=${idGroup.clientStakeSimulation}`);
+                console.log(idGroup);
+                let pendingRows = idGroup.rows.filter(itm => itm.eval == "pen");
+                console.log({pendingRows: pendingRows});
+            
+            });
+
+            
+                let clientModal = document.querySelector("#clientEventsModal");
+                let clientModalDisplay = clientModal.style.display; 
+                console.log({clientModalDisplay: clientModalDisplay});
+                if (clientModalDisplay == "flex") {
+                    let clientId = document.querySelector("#clientModalTitle").textContent.split("Pending for: ")[1];
+                    let clientEvnts = currentEventData.results.find(item => item.id == clientId);
+                    await openClientModal(JSON.stringify(clientEvnts.uniqueEvents2).replace(/'/g, "&apos;"), clientId);
+                }
         }
 
-        idGroup.clientStake = totalStake.toFixed(2);
-        idGroup.clientPendingStake = totalPending.toFixed(2);
-        idGroup.clientPl = totalPl.toFixed(2);
-        idGroup.clientPlSimulation = totalPlSimulation.toFixed(2);
-        idGroup.clientStakeSimulation = totalStakeSimulation.toFixed(2);
-        console.log(`Updated client ${idGroup.id}: Stake=${idGroup.clientStake}, Pending=${idGroup.clientPendingStake}, PL=${idGroup.clientPl}, SimPL=${idGroup.clientPlSimulation}, SimStake=${idGroup.clientStakeSimulation}`);
-        console.log(idGroup);
-    });
-}
-
             // Helper to keep code clean
-            function calculatePlReal(row) {
+        function calculatePlReal(row) {
                 const stake = parseFloat(row.stakeReal);
                 const odd = parseFloat(row.odd);
                 row.stakeSimulation = stake;
@@ -1167,17 +1237,49 @@ if (currentEventData && currentEventData.results) {
         }
 
         function openClientModal(events, clientId) {
+            const data = currentEventData;
+
             const listContainer = document.getElementById('clientEventsList');
             document.getElementById('clientModalTitle').innerText = `Pending for: ${clientId}`;
 
             if (!events || events.length === 0) {
                 listContainer.innerHTML = "<p style='text-align:center; opacity:0.5;'>No events found.</p>";
             } else {
-                listContainer.innerHTML = events.map(event => `
-            <div class="client-event-item">
-                ${event}
-            </div>
-        `).join('');
+                // listContainer.innerHTML = events.map(event => `
+                //     <div class="client-event-item" onclick="openModal('${event.replace(/'/g, "\\'")}')">
+                //         ${event}
+                //     </div>
+                // `).join('');
+
+                console.log({clientId: clientId});
+                // // Try out the other formatting
+                listContainer.innerHTML = data.uniqueEvents.map((event) => {
+                    if (data.uniqueEventsClients[event].includes(clientId)) {
+                        const saved = eventsWithResults[event];
+                        let resultHtml = "";
+
+                        if (saved) {
+                            const color = saved.result === "WIN" || saved.result === "1/2 WIN" ? "var(--accent-cyan)" :
+                                saved.result === "LOSS" || saved.result === "1/2 LOSE" ? "var(--accent-pink)" : "#ccc";
+                            resultHtml = `<span class="event-result-text" style="color: ${color}">${saved.result} (${saved.score})</span>`;
+                        }
+
+                        return `
+                            <div class="event-card">
+                                <div class="event-info">
+                                <a href="javascript:void(0)" onclick="handleEventClick('${data.uniqueEventsWithLinks[event]?.league?.url || ""}')">${event}</a>
+                                <p style="font-size: 9px;">${data.uniqueEventsClients[event].join(", ")}</p>
+                                </div>
+                                <div style="display: flex; align-items: center;">
+                                    ${resultHtml}
+                                    <button class="edit-btn" onclick="openModal('${event.replace(/'/g, "\\'")}')">Edit</button>
+                                </div>
+                            </div>
+                        `;
+                        }
+                }).join('');
+                    
+                
             }
             document.getElementById('clientEventsModal').style.display = 'flex';
         }
