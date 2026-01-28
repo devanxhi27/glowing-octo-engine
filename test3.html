@@ -427,6 +427,44 @@
 }
 
 
+/* The background dim effect */
+.overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0, 0, 0, 0.7); /* Semi-transparent black */
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    z-index: 9999; /* Ensure it stays on top */
+    color: white;
+    font-family: sans-serif;
+}
+
+/* A simple CSS spinner animation */
+.loader {
+    border: 8px solid #f3f3f3;
+    border-top: 8px solid #3498db;
+    border-radius: 50%;
+    width: 60px;
+    height: 60px;
+    animation: spin 1s linear infinite;
+    margin-bottom: 15px;
+}
+
+@keyframes spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+}
+
+/* Helper class to hide/show */
+.hidden {
+    display: none;
+}
+
     </style>
 </head>
 
@@ -539,6 +577,11 @@
             <div id="clientEventsList" style="margin: 20px 0; max-height: 300px; overflow-y: auto;"></div>
             <button class="btn btn-close" style="width:100%" onclick="closeClientModal()">Close</button>
         </div>
+    </div>
+
+    <div id="loading-overlay" class="overlay hidden">
+        <div class="loader"></div>
+        <p>Processing your request...</p>
     </div>
 
 <script>
@@ -713,10 +756,19 @@ function renderDiffList(data) {
 
         function clearCache() {
             if (confirm("Delete all saved results?")) {
+                const overlay = document.getElementById('loading-overlay');
+                
+                // 1. Show the loader
+                overlay.classList.remove('hidden');
+
                 eventsWithResults = {};
                 localStorage.removeItem('eventsWithResults');
                 localStorage.removeItem('fullEventDataCache');
-                initDashboard();
+                initDashboard().then(() => {
+                    setTimeout(() => {
+                        overlay.classList.add('hidden');
+                    }, 150);}
+                );
             }
         }
 
@@ -774,40 +826,50 @@ function renderDiffList(data) {
             }
         }
 
-// Add this to your event listener for the Apply button
-document.querySelector('.btn-apply').addEventListener('click', function() {
-    const h = parseFloat(document.getElementById('homeScore').value);
-    const a = parseFloat(document.getElementById('awayScore').value);
-    if (isNaN(h) || isNaN(a)) return;
+        // Add this to your event listener for the Apply button
+        document.querySelector('.btn-apply').addEventListener('click', function() {
+            const overlay = document.getElementById('loading-overlay');
+            
+            overlay.classList.remove('hidden');
+            console.log(overlay.classList);
 
-    const eventString = document.getElementById('modalTitle').innerText;
-    const originalLineMarket = ((activeLine.toLowerCase().includes("corn")) ? "CORNERS" : ((activeLine.toLowerCase().includes("card")) ? "CARDS" : "GOALS"));
+            const h = parseFloat(document.getElementById('homeScore').value);
+            const a = parseFloat(document.getElementById('awayScore').value);
+            if (isNaN(h) || isNaN(a)) return;
 
-    // Convert NodeList to Array and filter for matches first
-    const itemsToProcess = Array.from(document.querySelectorAll(".event-info a")).filter(itm => {
-        let eventTitle = itm.innerText.split(": ")[0];
-        let itemLine = itm.innerText.split(": ")[1];
-        let currentLineMarket = ((itemLine.toLowerCase().includes("corn")) ? "CORNERS" : ((itemLine.toLowerCase().includes("card")) ? "CARDS" : "GOALS"));
-        
-        return (eventTitle === eventString && currentLineMarket === originalLineMarket);
-    });
+            const eventString = document.getElementById('modalTitle').innerText;
+            const originalLineMarket = ((activeLine.toLowerCase().includes("corn")) ? "CORNERS" : ((activeLine.toLowerCase().includes("card")) ? "CARDS" : "GOALS"));
 
-    // Loop through the filtered matches
-    itemsToProcess.forEach((itm, index) => {
-        // Update global variables for the current item in the loop
-        activeFullEvent = itm.innerText;
-        activeLine = itm.innerText.split(": ")[1];
-        
-        // Check if this is the last item in our filtered list
-        const isLastItem = (index === itemsToProcess.length - 1);
+            // Convert NodeList to Array and filter for matches first
+            const itemsToProcess = Array.from(document.querySelectorAll(".event-info a")).filter(itm => {
+                let eventTitle = itm.innerText.split(": ")[0];
+                let itemLine = itm.innerText.split(": ")[1];
+                let currentLineMarket = ((itemLine.toLowerCase().includes("corn")) ? "CORNERS" : ((itemLine.toLowerCase().includes("card")) ? "CARDS" : "GOALS"));
+                
+                return (eventTitle === eventString && currentLineMarket === originalLineMarket);
+            });
 
-        // Call applyEdit with the boolean flag
-        // If it's the last item, it passes true (to close modal), otherwise false
-        applyEdit(isLastItem);
-        
-        console.log(`Processed ${index + 1} of ${itemsToProcess.length}`);
-    });
-});
+            // Loop through the filtered matches
+            itemsToProcess.forEach((itm, index) => {
+                // Update global variables for the current item in the loop
+                activeFullEvent = itm.innerText;
+                activeLine = itm.innerText.split(": ")[1];
+                
+                // Check if this is the last item in our filtered list
+                const isLastItem = (index === itemsToProcess.length - 1);
+
+                // Call applyEdit with the boolean flag
+                // If it's the last item, it passes true (to close modal), otherwise false
+                applyEdit(isLastItem);
+                
+                console.log(`Processed ${index + 1} of ${itemsToProcess.length}`);
+            });
+            setTimeout(() => {
+                overlay.classList.add('hidden');
+            }, 350);
+            
+            console.log(overlay.classList);
+        });
 
         function replaceCommonLineMiswritings(line)
         {
