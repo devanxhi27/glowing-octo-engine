@@ -1102,10 +1102,11 @@ function renderDiffList(data) {
                             const sSim = parseFloat(row.stakeSimulation) || s; 
                             const pSim = parseFloat(row.plSimulation) || 0;
                             
-                            totalStakeSimulation += sSim;
+                            
                             // Only add to PL if it's not pending
                             if (row.eval !== "pen") {
                                 totalPlSimulation += pSim;
+                                totalStakeSimulation += sSim;
                             }
                         }
                     });
@@ -1149,10 +1150,11 @@ function renderDiffList(data) {
                             const sSim = parseFloat(row.stakeSimulation) || s; 
                             const pSim = parseFloat(row.plSimulation) || 0;
                             
-                            totalStakeSimulation += sSim;
+                            
                             // Only add to PL if it's not pending
                             if (row.eval !== "pen") {
                                 totalPlSimulation += pSim;
+                                totalStakeSimulation += sSim;
                             }
                         }
                     });
