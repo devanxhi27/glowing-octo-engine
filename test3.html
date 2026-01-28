@@ -1,500 +1,461 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" data-theme="dark">
 
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Clients Dashboard - Unified</title>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <style>
         :root {
-            --glass-bg: rgba(255, 255, 255, 0.07);
-            --glass-border: rgba(255, 255, 255, 0.1);
-            --accent-cyan: #00fff2;
-            --accent-pink: #ff007f;
-            --modal-overlay: rgba(0, 0, 0, 0.8);
+            /* DARK MODE */
+            --bg-gradient: linear-gradient(135deg, #0f172a 0%, #1e1b4b 100%);
+            --card-bg: rgba(30, 41, 59, 0.7);
+            --card-border: rgba(255, 255, 255, 0.1);
+            --text-main: #f8fafc;
+            --text-muted: #94a3b8;
+            --accent-cyan: #22d3ee;
+            --accent-pink: #f43f5e;
+            --table-row: rgba(255, 255, 255, 0.03);
+            --table-hover: rgba(255, 255, 255, 0.08);
+            --modal-bg: #1e293b;
+            --input-bg: rgba(0, 0, 0, 0.2);
+            --heavy-border: #475569;
+            /* Visible dark grey */
         }
-
+    
+        [data-theme="light"] {
+            --bg-gradient: linear-gradient(135deg, #f1f5f9 0%, #e2e8f0 100%);
+            --card-bg: rgba(255, 255, 255, 0.8);
+            --card-border: rgba(0, 0, 0, 0.05);
+            --text-main: #1e293b;
+            --text-muted: #64748b;
+            --accent-cyan: #0891b2;
+            --accent-pink: #e11d48;
+            --table-row: rgba(0, 0, 0, 0.02);
+            --table-hover: rgba(0, 0, 0, 0.05);
+            --modal-bg: #ffffff;
+            --input-bg: #f8fafc;
+            --heavy-border: #cbd5e1;
+            /* Visible light grey */
+        }
+    
         body {
             margin: 0;
-            background: linear-gradient(135deg, #112868 0%, #8a0b80 100%) fixed;
+            background: var(--bg-gradient) fixed;
             min-height: 100vh;
             font-family: "Poppins", sans-serif;
-            color: white;
-            display: flex;
-            justify-content: center;
-            padding: 40px 20px;
+            color: var(--text-main);
+            transition: background 0.3s ease;
         }
-
+    
+        /* NAVBAR */
+        .navbar {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 15px 40px;
+            background: var(--card-bg);
+            backdrop-filter: blur(10px);
+            border-bottom: 1px solid var(--card-border);
+            position: sticky;
+            top: 0;
+            z-index: 1000;
+        }
+    
+        .nav-logo {
+            font-weight: 700;
+            font-size: 1.2rem;
+            letter-spacing: -0.5px;
+            color: var(--accent-cyan);
+        }
+    
+        .theme-toggle {
+            background: var(--input-bg);
+            border: 1px solid var(--card-border);
+            color: var(--text-main);
+            padding: 8px 16px;
+            border-radius: 20px;
+            cursor: pointer;
+            font-size: 0.8rem;
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            transition: all 0.2s;
+        }
+    
+        .theme-toggle:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+        }
+    
+        /* MAIN LAYOUT */
         .container {
             width: 100%;
             max-width: 1400px;
+            margin: 0 auto;
+            padding: 30px 20px;
             display: flex;
             flex-direction: column;
             gap: 25px;
-        }
-
-        h2 {
-            text-align: center;
-            margin: 0;
-            text-shadow: 0 0 15px rgba(255, 255, 255, 0.3);
-        }
-
-        .chart-card {
-            background: var(--glass-bg);
-            backdrop-filter: blur(20px);
-            border: 1px solid var(--glass-border);
-            border-radius: 24px;
-            padding: 30px;
-            box-shadow: 0 25px 50px rgba(0, 0, 0, 0.4);
-            width: 100%;
-            height: 450px;
             box-sizing: border-box;
         }
-
+    
+        h2 {
+            font-size: 1.8rem;
+            font-weight: 700;
+            margin: 0;
+        }
+    
         .simulation-row {
             display: flex;
             gap: 20px;
             width: 100%;
             flex-wrap: wrap;
         }
-
+    
+        /* CARDS */
         .sim-card {
-            background: var(--glass-bg);
+            background: var(--card-bg);
             backdrop-filter: blur(20px);
-            border: 1px solid var(--glass-border);
-            border-radius: 24px;
+            border: 1px solid var(--card-border);
+            border-radius: 20px;
             padding: 25px;
-            box-shadow: 0 25px 50px rgba(0, 0, 0, 0.4);
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
             flex: 1;
             min-width: 320px;
             max-height: 600px;
             overflow-y: auto;
-            box-sizing: border-box;
             position: relative;
+            transition: transform 0.3s ease;
         }
-
+    
         .sim-card h1 {
-            font-size: 1.4rem;
-            text-align: center;
-            margin-bottom: 20px;
-            color: var(--accent-cyan);
-        }
-
-        /* NEW CLEAR BUTTON STYLING */
-        #clearCacheBtn {
-            background: rgba(255, 0, 127, 0.15);
-            color: var(--accent-pink);
-            border: 1px solid var(--accent-pink);
-            padding: 4px 10px;
-            border-radius: 6px;
-            font-size: 0.7rem;
-            cursor: pointer;
-            position: absolute;
-            top: 25px;
-            right: 25px;
-            transition: all 0.2s;
-        }
-
-        #clearCacheBtn:hover {
-            background: var(--accent-pink);
-            color: white;
-        }
-
-        #clientList {
-            width: 100%;
-        }
-
-        table {
-            width: 100%;
-            border-collapse: separate;
-            border-spacing: 0 8px;
-            font-size: 0.85rem;
-        }
-
-        th {
+            font-size: 1.1rem;
             text-transform: uppercase;
             letter-spacing: 1px;
-            font-size: 0.75rem;
+            margin-bottom: 20px;
+            color: var(--text-muted);
+        }
+    
+        /* TABLE STYLING */
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 0.85rem;
+        }
+    
+        th {
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            font-size: 0.7rem;
             color: var(--accent-cyan);
             padding: 12px 15px;
             text-align: left;
-            position: sticky;
-            top: 0;
-            background: rgba(20, 30, 60, 0.8);
-        }
-
-        td {
-            padding: 12px 15px;
-            background: rgba(255, 255, 255, 0.05);
-            border-top: 1px solid var(--glass-border);
-            border-bottom: 1px solid var(--glass-border);
-        }
-
-        td:first-child {
-            border-left: 1px solid var(--glass-border);
-            border-radius: 10px 0 0 10px;
+            border-bottom: 1px solid var(--card-border);
             font-weight: 600;
         }
-
-        td:last-child {
-            border-right: 1px solid var(--glass-border);
-            border-radius: 0 10px 10px 0;
+    
+        td {
+            padding: 14px 15px;
+            border-bottom: 1px solid var(--card-border);
         }
-
+    
+        tr:nth-child(even) {
+            background: var(--table-row);
+        }
+    
         tr:hover td {
-            background: rgba(255, 255, 255, 0.1);
-            border-color: var(--accent-pink);
+            background: var(--table-hover);
         }
-
+    
+        /* BUTTONS */
+        .edit-btn {
+            background: var(--accent-cyan);
+            color: white;
+            border: none;
+            padding: 6px 14px;
+            border-radius: 8px;
+            font-weight: 600;
+            cursor: pointer;
+            font-size: 0.75rem;
+            transition: all 0.2s;
+        }
+    
+        .edit-btn:hover {
+            filter: brightness(1.1);
+            box-shadow: 0 0 10px var(--accent-cyan);
+        }
+    
+        #clearCacheBtn {
+            background: var(--accent-pink);
+            color: white;
+            border: none;
+            padding: 6px 12px;
+            border-radius: 8px;
+            font-size: 0.7rem;
+            cursor: pointer;
+            margin-bottom: 15px;
+            transition: opacity 0.2s;
+        }
+    
+        /* EVENT CARDS */
         .event-card {
-            background: rgba(255, 255, 255, 0.05);
-            margin-bottom: 10px;
+            background: var(--table-row);
+            margin-bottom: 12px;
             padding: 15px;
             border-radius: 12px;
-            border: 1px solid transparent;
-            transition: all 0.2s ease;
+            border: 1px solid var(--card-border);
             display: flex;
             justify-content: space-between;
             align-items: center;
         }
-
-        .event-info {
-            flex-grow: 1;
-            text-align: left;
-        }
-
+    
         .event-info a {
-            color: white;
+            color: var(--text-main);
             text-decoration: none;
-            font-weight: 500;
-            font-size: 0.9rem;
-        }
-
-        .event-result-text {
-            font-size: 0.8rem;
-            font-weight: 700;
-            margin-right: 12px;
-            text-transform: uppercase;
-        }
-
-        .edit-btn {
-            background: var(--accent-cyan);
-            color: #112868;
-            border: none;
-            padding: 6px 12px;
-            border-radius: 6px;
-            font-family: inherit;
             font-weight: 600;
-            cursor: pointer;
-            font-size: 0.8rem;
+            display: block;
+            margin-bottom: 4px;
         }
-
+    
+        .event-info p {
+            margin: 0;
+            color: var(--text-muted);
+        }
+    
+        /* MODALS */
         .modal-overlay {
             position: fixed;
             top: 0;
             left: 0;
             width: 100%;
             height: 100%;
-            background: var(--modal-overlay);
+            background: rgba(0, 0, 0, 0.6);
             display: none;
             justify-content: center;
             align-items: center;
-            backdrop-filter: blur(5px);
+            backdrop-filter: blur(8px);
+            z-index: 2000;
         }
-
+    
         .modal-content {
-            background: rgba(20, 30, 60, 0.95);
-            border: 1px solid var(--accent-cyan);
-            border-radius: 20px;
+            background: var(--modal-bg);
+            border: 1px solid var(--card-border);
+            border-radius: 24px;
             padding: 30px;
             width: 90%;
-            max-width: 400px;
-            text-align: center;
+            max-width: 450px;
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.3);
         }
-
-        .input-group {
-            display: flex;
-            justify-content: space-between;
-            gap: 15px;
-            margin-bottom: 25px;
-        }
-
-        .input-field {
-            flex: 1;
-            display: flex;
-            flex-direction: column;
-        }
-
+    
         .input-field input {
-            background: rgba(255, 255, 255, 0.1);
-            border: 1px solid rgba(255, 255, 255, 0.2);
-            padding: 10px;
-            color: white;
-            border-radius: 8px;
-            text-align: center;
-        }
-
-        .btn {
-            flex: 1;
+            background: var(--input-bg);
+            border: 1px solid var(--card-border);
             padding: 12px;
+            color: var(--text-main);
             border-radius: 10px;
+            width: 100%;
+            box-sizing: border-box;
+            outline: none;
+            transition: border-color 0.2s;
+        }
+    
+        .input-field input:focus {
+            border-color: var(--accent-cyan);
+        }
+    
+        .btn {
+            padding: 12px 20px;
+            border-radius: 12px;
             border: none;
-            font-family: inherit;
             font-weight: 600;
             cursor: pointer;
+            transition: 0.2s;
         }
-
+    
         .btn-apply {
             background: var(--accent-cyan);
-            color: #112868;
-        }
-
-        .btn-close {
-            background: rgba(255, 255, 255, 0.1);
             color: white;
         }
-
-        .status-win {
-            background: rgba(0, 255, 242, 0.2);
-            color: var(--accent-cyan);
-            border: 1px solid var(--accent-cyan);
+    
+        .btn-close {
+            background: var(--text-muted);
+            color: white;
+            opacity: 0.8;
         }
-
-        .status-loss {
-            background: rgba(255, 0, 127, 0.2);
-            color: var(--accent-pink);
-            border: 1px solid var(--accent-pink);
+    
+        /* SCROLLBAR */
+        ::-webkit-scrollbar {
+            width: 8px;
         }
-
-        .status-pending {
-            background: rgba(255, 255, 255, 0.1);
-            color: #ccc;
-            border: 1px solid #555;
+    
+        ::-webkit-scrollbar-track {
+            background: transparent;
         }
-
-        .evaluation-box {
-            margin-bottom: 20px;
-            padding: 15px;
-            background: rgba(255, 255, 255, 0.05);
-            border-radius: 12px;
+    
+        ::-webkit-scrollbar-thumb {
+            background: var(--text-muted);
+            border-radius: 10px;
+            border: 2px solid transparent;
+            background-clip: content-box;
         }
-
-        .eval-status {
-            padding: 5px;
-            border-radius: 5px;
-            font-weight: bold;
-        }
-
+    
+        /* WIDGET */
         .corner-widget {
             position: fixed;
-            bottom: 15px;
+            bottom: 20px;
             right: 20px;
             display: flex;
-            flex-direction: column;
             align-items: center;
-            opacity: 0.45;
-            cursor: pointer;
+            background: var(--card-bg);
+            padding: 10px 15px;
+            border-radius: 30px;
+            border: 1px solid var(--card-border);
+            backdrop-filter: blur(10px);
+            text-decoration: none;
+            z-index: 1000;
         }
-
+    
         .corner-icon {
-            width: 38px;
-            height: 38px;
-            filter: brightness(0) invert(1);
+            width: 24px;
+            filter: invert(0.5);
+            margin-right: 10px;
         }
-
+    
         .corner-text {
-            margin-top: 4px;
-            font-size: 0.9rem;
-            color: rgba(255, 255, 255, 0.8);
+            font-size: 0.75rem;
+            color: var(--text-main);
         }
-
-        #clientList tbody tr {
-            cursor: pointer;
-            transition: background 0.2s;
+    
+        /* UTILS */
+        .status-win {
+            color: var(--accent-cyan);
+            font-weight: 700;
         }
-
-        .client-event-item {
-            background: rgba(255, 255, 255, 0.05);
-            padding: 10px;
-            border-radius: 8px;
-            margin-bottom: 8px;
-            font-size: 0.85rem;
-            border: 1px solid var(--glass-border);
+    
+        .status-loss {
+            color: var(--accent-pink);
+            font-weight: 700;
         }
-        
-        @media (max-width: 1100px) {
+    
+        @media (max-width: 768px) {
+            .navbar {
+                padding: 15px 20px;
+            }
+    
             .simulation-row {
                 flex-direction: column;
             }
-
-         }
-
-        /* MOBILE RESPONSIVENESS - Added without changing original desktop styles */
-        @media (max-width: 768px) {
-            body {
-                padding: 20px 10px; /* Reduced outer padding */
-            }
-
-            .container {
-                gap: 15px;
-                display: grid;
-            }
-
-            .chart-card {
-                height: 300px; /* Shorter chart for small screens */
-                padding: 15px;
-            }
-
-            .simulation-row {
-                flex-direction: column; /* Stacks the two cards vertically */
-                width: 75%;
-            }
-
+    
             .sim-card {
-                /* min-width: 100%; */
-                max-width: 650;
-                padding: 15px;
+                min-width: 100%;
             }
 
-            .sim-card h1 {
-                font-size: 1.1rem;
+            #weekContainer {
+                width: 100vw;
+            }
+            #clientContainer {
+                width: 100vw;
+            }
+            .navbar {
+                width: 100vw;
             }
 
-            /* Makes the table scrollable horizontally on small phones */
-            #clientList {
-                overflow-x: auto;
-                -webkit-overflow-scrolling: touch;
-            }
-
-            table {
-                min-width: 500px; /* Prevents text from squishing too much */
-            }
-
-            .event-card {
-                padding: 10px;
-                flex-wrap: wrap; /* Allows button to move below text if needed */
-                gap: 10px;
-            }
-
-            .event-info a {
-                font-size: 0.8rem;
-            }
-
-            /* Adjusts input fields so they are easier to tap on mobile */
-            .input-field input {
-                font-size: 16px; /* Prevents iOS auto-zoom on focus */
-                padding: 12px 5px;
-            }
-
-            /* Corner widget adjustment for thumb reach */
-            .corner-widget {
-                bottom: 10px;
-                right: 10px;
-                opacity: 0.8; /* Slightly more visible on mobile */
-            }
-            
-            #clearCacheBtn {
-                top: 15px;
-                right: 15px;
-                padding: 6px 8px;
+            #diffOddsContainer {
+                width: min-content;
             }
         }
-
-
-
-        #diffOddsContainer th{
-            text-align: center;
-            border: 0.5px solid #ccc;
-            background-color: rgba(20, 30, 60, 0.8);;
-        }
-
-        .total-row {
-            background-color: rgba(20, 30, 60, 0.8);
-        }
-
-         #diffOddsContainer td{
-            text-align: center;
-            border: 0.5px solid #cccccc40;;
-            background-color: unset;
-            border-radius: unset;
-        }
-
-        #diffOddsContainer table{
-           border-spacing: 0;
-        }
-
+    
+        /* FIXED: VISIBLE HEAVY BORDERS */
         .border-left {
-            border-left: 4px solid #ccc !important;
+            border-left: 3px solid var(--heavy-border) !important;
         }
-
+    
         .border-right {
-            border-right: 4px solid #ccc !important;
+            border-right: 3px solid var(--heavy-border) !important;
         }
-
-        /* Target the containers where the scrollbar is active */
-        #weekContainer, 
-        #clientContainer {
-            /* Required for the scrollbar to stay inside the rounded corners */
-            overflow-y: auto;
+    
+        #clientEventsModal {
+            z-index: 2000;
         }
-
-        /* Chrome, Edge, and Safari */
-        #weekContainer::-webkit-scrollbar, 
-        #clientContainer::-webkit-scrollbar {
-            width: 12px; /* We increase total width to allow for 'padding' space */
+    
+        /* Edit Modal must be higher to overlap the Client List Modal */
+        #editModal {
+            z-index: 3000;
         }
-
-        #weekContainer::-webkit-scrollbar-track, 
-        #clientContainer::-webkit-scrollbar-track {
-            background: transparent; 
-            /* Important: gives the thumb space to breathe near the rounded corners */
-            margin: 15px 0; 
-        }
-
-        #weekContainer::-webkit-scrollbar-thumb, 
-        #clientContainer::-webkit-scrollbar-thumb {
-            /* This gray matches your previous request */
-            background-color: rgba(255, 255, 255, 0.15); 
-            
-            /* These three lines are the magic fix: */
-            border: 4px solid transparent; /* Acts as 'padding' to push it inside */
-            background-clip: padding-box; /* Ensures color only fills inside the border */
-            border-radius: 10px; /* Makes the thumb itself pill-shaped */
-        }
-
-        #weekContainer::-webkit-scrollbar-thumb:hover, 
-        #clientContainer::-webkit-scrollbar-thumb:hover {
-            background-color: rgba(255, 255, 255, 0.3); 
-        }
-
-
-        /* Ensure the second modal is always on top */
-#editModal {
-    z-index: 1060 !important; 
+    
+/* 1. Ensure the parent card doesn't clip the sticky behavior */
+#diffOddsContainer {
+    overflow: visible !important; 
+    max-height: none !important;
 }
 
-/* Ensure the second modal's backdrop is also higher */
-.modal-backdrop:nth-of-type(2) {
-    z-index: 1055 !important;
+/* 2. Target the table headers specifically */
+#diffOddsContainer table thead th {
+    position: sticky !important;
+    top: 35px;
+    background-color: var(--card-bg); /* Match card color */
+    z-index: 100;
+    border-bottom: 2px solid var(--accent-cyan);
 }
+
+/* 3. Handle the second row offset */
+#diffOddsContainer thead tr:nth-child(2) th {
+    top: 70px !important; /* Adjust if your first row is taller/shorter */
+}
+
+/* 4. Fix for backdrop-filter transparency */
+#diffOddsContainer table {
+    border-collapse: separate;
+    border-spacing: 0;
+}
+
+/* 2. ALIGN CLEAR CACHE BUTTON TO THE RIGHT */
+.event-header {
+    display: flex;
+    justify-content: space-between; /* Pushes H1 to left and Button to right */
+    align-items: center;
+    width: 100%;
+}
+
+#clearCacheBtn {
+    margin-bottom: 0; /* Remove existing margin to align with header text */
+    margin-left: auto; /* Safety fallback */
+}
+
+
     </style>
 </head>
 
 <body>
 
+    <nav class="navbar">
+        <div class="nav-logo">EAGLE ANALYTICS</div>
+        <button class="theme-toggle" id="themeToggle">
+            <span id="themeIcon">🌙</span> <span id="themeText">Dark Mode</span>
+        </button>
+    </nav>
+
     <div class="container">
         <div class="simulation-row">
             <h2>Performance Analysis</h2>
         </div>
+
         <div class="simulation-row">
             <div class="sim-card" id="weekContainer">
-                <h1 id="pendingHeader">Pending Events</h1>
+                <div class="event-header">
+                    <h1 id="pendingHeader">Pending Events</h1>
+                </div>
+
+                
                 <div id="weekList"></div>
             </div>
+
             <div class="sim-card" id="clientContainer">
-                <!-- <h1>Client Simulations</h1> -->
+                <h1>Client Simulations</h1>
                 <div id="clientList">
                     <table>
                         <thead>
@@ -512,19 +473,19 @@
             </div>
         </div>
 
-
         <div class="simulation-row" style="display: block;">
-           <div id="diffOddsContainer">
+            <div class="sim-card" id="diffOddsContainer" style="max-height: unset;">
+                <h1>Profit/Loss Comparison</h1>
                 <table>
                     <thead>
                         <tr>
-                            <th class="border-left"></th>
-                            <th class="border-left" colspan="3">Partner</th>
-                            <th class="border-left" colspan="3">Client</th>
-                            <th class="border-left border-right" colspan="3">Diff</th>
+                            <th class="border-left">Client</th>
+                            <th class="border-left" colspan="3" style="text-align:center">Partner PL</th>
+                            <th class="border-left" colspan="3" style="text-align:center">Client PL</th>
+                            <th class="border-left" colspan="3" style="text-align:center">Diff</th>
                         </tr>
                         <tr>
-                            <th class="border-left">Client</th>
+                            <th class="border-left">Name</th>
                             <th class="border-left">Week</th>
                             <th>Month</th>
                             <th>Total</th>
@@ -532,73 +493,81 @@
                             <th>Month</th>
                             <th>Total</th>
                             <th class="border-left">Week</th>
-                            <th class="border-right">Month</th>
+                            <th>Month</th>
                             <th>Total</th>
                         </tr>
                     </thead>
-                    <tbody>
-                          <tr>
-                            <td></td>
-                           <td></td>
-                          <td></td>
-                          <td></td>
-                           <td></td>
-                            <td></td>
-                            <td></td>
-                        </tr>
-                    </tbody>
+                    <tbody></tbody>
                 </table>
             </div>
         </div>
-        <a href="./clients.html">
-            <div class="corner-widget">
-                <img class="corner-icon" src="public/images/home-17-svgrepo-com.svg" alt="home Icon">
-                <span class="corner-text">Home</span>
-            </div>
-        </a>
     </div>
+
+    <a href="./clients.html" class="corner-widget">
+        <img class="corner-icon" src="public/images/home-17-svgrepo-com.svg" alt="home">
+        <span class="corner-text" id="lastUpdateText">Last Update: --</span>
+    </a>
 
     <div class="modal-overlay" id="editModal">
         <div class="modal-content">
-            <div class="modal-header" id="modalTitle" style="color: var(--accent-cyan); font-weight:700;">Match Name
-            </div>
-            <div class="modal-line-info" id="modalMarket" style="font-size:0.8rem; margin-bottom:20px; opacity:0.7;">
-                Line: home_0.5</div>
+            <h3 id="modalTitle" style="margin-top:0; color:var(--accent-cyan)">Match Name</h3>
+            <p id="modalMarket" style="font-size:0.8rem; color:var(--text-muted)">Line: --</p>
 
-            <div class="input-group">
+            <div style="display: flex; gap:15px; margin: 20px 0;">
                 <div class="input-field">
-                    <label style="font-size:0.75rem; margin-bottom:5px;">Home Score</label>
+                    <label style="font-size:0.7rem; display:block; margin-bottom:5px">HOME SCORE</label>
                     <input type="number" id="homeScore" placeholder="0" oninput="updateEvaluation()">
                 </div>
                 <div class="input-field">
-                    <label style="font-size:0.75rem; margin-bottom:5px;">Away Score</label>
+                    <label style="font-size:0.7rem; display:block; margin-bottom:5px">AWAY SCORE</label>
                     <input type="number" id="awayScore" placeholder="0" oninput="updateEvaluation()">
                 </div>
             </div>
 
-            <div class="evaluation-box">
-                <div style="font-size: 0.7rem; opacity: 0.6; margin-bottom: 5px;">LIVE EVALUATION</div>
-                <div id="evaluationResult" class="eval-status status-pending">Enter Scores</div>
+            <div style="background:var(--input-bg); padding:15px; border-radius:12px; margin-bottom:20px; text-align:center">
+                <div style="font-size:0.6rem; letter-spacing:1px; opacity:0.6; margin-bottom:5px">LIVE EVALUATION</div>
+                <div id="evaluationResult" class="status-pending">Enter Scores</div>
             </div>
 
             <div style="display: flex; gap: 10px;">
-                <button class="btn btn-close" onclick="closeModal()">Close</button>
-                <button class="btn btn-apply" onclick="applyEdit(true)">Apply Result</button>
+                <button class="btn btn-close" style="flex:1" onclick="closeModal()">Cancel</button>
+                <button class="btn btn-apply" style="flex:2" onclick="applyEdit(true)">Apply Result</button>
             </div>
         </div>
     </div>
 
     <div class="modal-overlay" id="clientEventsModal">
         <div class="modal-content" style="max-width: 500px;">
-            <div class="modal-header" id="clientModalTitle" style="color: var(--accent-cyan); font-weight:700;">Client
-                Events</div>
-            <div id="clientEventsList" style="margin: 20px 0; max-height: 300px; overflow-y: auto; text-align: left;">
-            </div>
-            <button class="btn btn-close" onclick="closeClientModal()">Close</button>
+            <h3 id="clientModalTitle" style="color: var(--accent-cyan);">Client Events</h3>
+            <div id="clientEventsList" style="margin: 20px 0; max-height: 300px; overflow-y: auto;"></div>
+            <button class="btn btn-close" style="width:100%" onclick="closeClientModal()">Close</button>
         </div>
     </div>
 
 <script>
+        // --- THEME LOGIC ---
+        const themeToggle = document.getElementById('themeToggle');
+        const themeIcon = document.getElementById('themeIcon');
+        const themeText = document.getElementById('themeText');
+        const html = document.documentElement;
+
+        function setTheme(theme) {
+            html.setAttribute('data-theme', theme);
+            localStorage.setItem('dashboard-theme', theme);
+            themeIcon.innerText = theme === 'dark' ? '🌙' : '☀️';
+            themeText.innerText = theme === 'dark' ? 'Dark Mode' : 'Light Mode';
+        }
+
+        themeToggle.addEventListener('click', () => {
+            const current = html.getAttribute('data-theme');
+            setTheme(current === 'dark' ? 'light' : 'dark');
+        });
+
+        // Load saved theme
+        const savedTheme = localStorage.getItem('dashboard-theme') || 'dark';
+        setTheme(savedTheme);
+
+        
         const API_BASE = 'https://eagle-current-dinosaur.ngrok-free.app';
         const FETCH_OPTIONS = { headers: { "ngrok-skip-browser-warning": "true", "Accept": "application/json" } };
         let myChart = null;
@@ -739,7 +708,7 @@ function renderDiffList(data) {
                 btn.id = 'clearCacheBtn';
                 btn.innerText = 'Clear Results';
                 btn.onclick = clearCache;
-                document.getElementById('weekContainer').appendChild(btn);
+                document.querySelector('.event-header').appendChild(btn);
             } else if (!hasCache && btn) {
                 btn.remove();
             }
