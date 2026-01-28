@@ -535,22 +535,6 @@
                             <th class="border-right">Month</th>
                             <th>Total</th>
                         </tr>
-
-
-                        <!-- <tr>
-                            <th></th>
-                            <th colspan="3">Week</th>
-                            <th colspan="3">Month</th>
-                        </tr>
-                        <tr>
-                            <th>Client</th>
-                            <th>Partner</th>
-                            <th>Client</th>
-                            <th>Diff</th>
-                            <th>Partner</th>
-                            <th>Client</th>
-                            <th>Diff</th>
-                        </tr> -->
                     </thead>
                     <tbody>
                           <tr>
@@ -566,9 +550,6 @@
                 </table>
             </div>
         </div>
-
-        <div class="chart-card"><canvas id="unifiedChart"></canvas></div>
-
         <a href="./clients.html">
             <div class="corner-widget">
                 <img class="corner-icon" src="public/images/home-17-svgrepo-com.svg" alt="home Icon">
@@ -649,7 +630,6 @@
             currentEventData = freshEventData;
         }
 
-        renderChart(clientData);
         renderWeekList(currentEventData); // Use currentEventData
         renderClientList(currentEventData); // Use currentEventData
         renderDiffList(currentEventData); //Use currentEventData
@@ -661,6 +641,25 @@
 function renderDiffList(data) {
     let tableBody = document.querySelector("#diffOddsContainer tbody");
     tableBody.innerHTML = ""; // Clear existing rows
+    let total_row = document.createElement("tr");
+    total_row.classList.add("total-row");
+    total_row.innerHTML = `
+        <td class="border-left">TOTAL</td>
+        <td class="border-left" style="${data.total_output_diff.partnerPlWeek > 0 ? "color: var(--accent-cyan)" : ((parseFloat(data.total_output_diff.partnerPlWeek)  == 0)?"color: #977b8994;":"color: var(--accent-pink)")}">${data.total_output_diff.partnerPlWeek}</td>
+        <td style="${data.total_output_diff.partnerPlMonth > 0 ? "color: var(--accent-cyan)" : ((parseFloat(data.total_output_diff.partnerPlMonth)  == 0)?"color: #977b8994;":"color: var(--accent-pink)")}">${data.total_output_diff.partnerPlMonth}</td>
+        <td style="${data.total_output_diff.partnerPlTotal > 0 ? "color: var(--accent-cyan)" : ((parseFloat(data.total_output_diff.partnerPlTotal)  == 0)?"color: #977b8994;":"color: var(--accent-pink)")}">${data.total_output_diff.partnerPlTotal}</td>
+        
+
+        <td class="border-left" style="${data.total_output_diff.clientPlWeek > 0 ? "color: var(--accent-cyan)" : ((parseFloat(data.total_output_diff.clientPlWeek)  == 0)?"color: #977b8994;":"color: var(--accent-pink)")}">${data.total_output_diff.clientPlWeek}</td>
+        <td style="${data.total_output_diff.clientPlMonth > 0 ? "color: var(--accent-cyan)" : ((parseFloat(data.total_output_diff.clientPlMonth)  == 0)?"color: #977b8994;":"color: var(--accent-pink)")}">${data.total_output_diff.clientPlMonth}</td>
+            <td style="${data.total_output_diff.clientPlTotal > 0 ? "color: var(--accent-cyan)" : ((parseFloat(data.total_output_diff.clientPlTotal)  == 0)?"color: #977b8994;":"color: var(--accent-pink)")}">${data.total_output_diff.clientPlTotal}</td>
+        
+
+        <td class="border-left"  style="${data.total_output_diff.diff_week > 0 ? "color: var(--accent-cyan)" : ((parseFloat(data.total_output_diff.diff_week)  == 0)?"color: #977b8994;":"color: var(--accent-pink)")}">${data.total_output_diff.diff_week}</td>
+        <td class="border-right"  style="${data.total_output_diff.diff_month > 0 ? "color: var(--accent-cyan)" : ((parseFloat(data.total_output_diff.diff_month)  == 0)?"color: #977b8994;":"color: var(--accent-pink)")}">${data.total_output_diff.diff_month}</td>
+        <td class="border-right"  style="${data.total_output_diff.diff_total > 0 ? "color: var(--accent-cyan)" : ((parseFloat(data.total_output_diff.diff_total)  == 0)?"color: #977b8994;":"color: var(--accent-pink)")}">${data.total_output_diff.diff_total}</td>
+    `;
+    tableBody.appendChild(total_row);
     data.output_diff.forEach(item => {
         let row = document.createElement("tr");
         row.innerHTML = `
@@ -693,25 +692,7 @@ function renderDiffList(data) {
         tableBody.appendChild(row);
     });
 
-    let total_row = document.createElement("tr");
-    total_row.classList.add("total-row");
-    total_row.innerHTML = `
-        <td class="border-left">TOTAL</td>
-        <td class="border-left" style="${data.total_output_diff.partnerPlWeek > 0 ? "color: var(--accent-cyan)" : ((parseFloat(data.total_output_diff.partnerPlWeek)  == 0)?"color: #977b8994;":"color: var(--accent-pink)")}">${data.total_output_diff.partnerPlWeek}</td>
-        <td style="${data.total_output_diff.partnerPlMonth > 0 ? "color: var(--accent-cyan)" : ((parseFloat(data.total_output_diff.partnerPlMonth)  == 0)?"color: #977b8994;":"color: var(--accent-pink)")}">${data.total_output_diff.partnerPlMonth}</td>
-        <td style="${data.total_output_diff.partnerPlTotal > 0 ? "color: var(--accent-cyan)" : ((parseFloat(data.total_output_diff.partnerPlTotal)  == 0)?"color: #977b8994;":"color: var(--accent-pink)")}">${data.total_output_diff.partnerPlTotal}</td>
-        
-
-        <td class="border-left" style="${data.total_output_diff.clientPlWeek > 0 ? "color: var(--accent-cyan)" : ((parseFloat(data.total_output_diff.clientPlWeek)  == 0)?"color: #977b8994;":"color: var(--accent-pink)")}">${data.total_output_diff.clientPlWeek}</td>
-        <td style="${data.total_output_diff.clientPlMonth > 0 ? "color: var(--accent-cyan)" : ((parseFloat(data.total_output_diff.clientPlMonth)  == 0)?"color: #977b8994;":"color: var(--accent-pink)")}">${data.total_output_diff.clientPlMonth}</td>
-            <td style="${data.total_output_diff.clientPlTotal > 0 ? "color: var(--accent-cyan)" : ((parseFloat(data.total_output_diff.clientPlTotal)  == 0)?"color: #977b8994;":"color: var(--accent-pink)")}">${data.total_output_diff.clientPlTotal}</td>
-        
-
-        <td class="border-left"  style="${data.total_output_diff.diff_week > 0 ? "color: var(--accent-cyan)" : ((parseFloat(data.total_output_diff.diff_week)  == 0)?"color: #977b8994;":"color: var(--accent-pink)")}">${data.total_output_diff.diff_week}</td>
-        <td class="border-right"  style="${data.total_output_diff.diff_month > 0 ? "color: var(--accent-cyan)" : ((parseFloat(data.total_output_diff.diff_month)  == 0)?"color: #977b8994;":"color: var(--accent-pink)")}">${data.total_output_diff.diff_month}</td>
-        <td class="border-right"  style="${data.total_output_diff.diff_total > 0 ? "color: var(--accent-cyan)" : ((parseFloat(data.total_output_diff.diff_total)  == 0)?"color: #977b8994;":"color: var(--accent-pink)")}">${data.total_output_diff.diff_total}</td>
-    `;
-    tableBody.appendChild(total_row);
+    
 }
 
         function handleEventClick(url) {
@@ -1293,106 +1274,6 @@ document.querySelector('.btn-apply').addEventListener('click', function() {
             if (e.target.id === 'clientEventsModal') closeClientModal();
         };
 
-        function renderChart(rawData) {
-            const ctx = document.getElementById('unifiedChart').getContext('2d');
-            const PL_MULTIPLIER = 8;
-            if (myChart) myChart.destroy();
-
-            const barGrad = ctx.createLinearGradient(0, 0, 0, 400);
-            barGrad.addColorStop(0, 'rgba(0, 255, 242, 0.8)');
-            barGrad.addColorStop(1, 'rgba(0, 255, 242, 0)');
-
-            myChart = new Chart(ctx, {
-                data: {
-                    labels: rawData.map(d => d.client),
-                    datasets: [
-                        {
-                            type: 'line',
-                            label: 'P/L',
-                            data: rawData.map(d => d.pl * PL_MULTIPLIER), 
-                            borderColor: '#FF6EC7',
-                            backgroundColor: '#FF6EC7',
-                            borderWidth: 2,
-                            pointRadius: 6,
-                            pointHoverRadius: 9,
-                            tension: 0.4,
-                            order: 1
-                        },
-                        {
-                            type: 'line',
-                            label: 'P/L Office',
-                            data: rawData.map(d => d.plOffice * PL_MULTIPLIER), 
-                            borderColor: '#00FFFF',
-                            backgroundColor: '#00FFFF',
-                            borderWidth: 2,
-                            pointRadius: 6,
-                            pointHoverRadius: 9,
-                            tension: 0.4,
-                            order: 1
-                        },
-                         {
-                            type: 'line',
-                            label: 'P/L Confirm',
-                            data: rawData.map(d => d.plConfirm * PL_MULTIPLIER), 
-                            borderColor: '#CCFF00',
-                            backgroundColor: '#CCFF00',
-                            borderWidth: 2,
-                            pointRadius: 6,
-                            pointHoverRadius: 9,
-                            tension: 0.4,
-                            order: 1
-                        },
-                        {
-                            type: 'bar',
-                            label: 'Total Stake',
-                            data: rawData.map(d => d.stake),
-                            backgroundColor: barGrad,
-                            borderColor: '#00fff2',
-                            borderWidth: 2,
-                            borderRadius: 10,
-                            order: 2
-                        }
-                    ]
-                },
-                options: {
-                    responsive: true,
-                    maintainAspectRatio: false,
-                    interaction: { mode: 'index', intersect: false },
-                    plugins: {
-                        legend: {
-                            labels: {
-                                color: '#ffffff',
-                                font: { family: 'Poppins', size: 14, weight: '600' }
-                            }
-                        },
-                        tooltip: {
-                            backgroundColor: 'rgba(15, 15, 35, 0.95)',
-                            callbacks: {
-                                label: function(context) {
-                                    let label = context.dataset.label || '';
-                                    let value = context.dataset.type === 'line' ? context.raw / PL_MULTIPLIER : context.raw;
-                                    return ` ${label}: $${Math.floor(value).toLocaleString()}`;
-                                }
-                            }
-                        }
-                    },
-                    scales: {
-                        y: {
-                            grid: { color: 'rgba(255, 255, 255, 0.1)' },
-                            ticks: {
-                                color: '#ffffff',
-                                callback: (v) => {
-                                    if (Math.abs(v) >= 1000000) return (v / 1000000).toFixed(1) + 'M';
-                                    if (Math.abs(v) >= 1000) return (v / 1000).toFixed(0) + 'K';
-                                    return v;
-                                }
-                            }
-                        },
-                        x: { ticks: { color: '#ffffff' } }
-                    }
-                }
-            });
-        }
         window.onload = initDashboard;
     </script>
 </body>
