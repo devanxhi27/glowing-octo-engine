@@ -1106,7 +1106,7 @@ function renderDiffList(data) {
                             // Only add to PL if it's not pending
                             if (row.eval !== "pen") {
                                 totalPlSimulation += pSim;
-                                totalStakeSimulation += sSim;
+                                totalStakeSimulation += parseFloat(row.stakeSimulation);
                             }
                         }
                     });
@@ -1154,7 +1154,7 @@ function renderDiffList(data) {
                             // Only add to PL if it's not pending
                             if (row.eval !== "pen") {
                                 totalPlSimulation += pSim;
-                                totalStakeSimulation += sSim;
+                                totalStakeSimulation += parseFloat(row.stakeSimulation);
                             }
                         }
                     });
