@@ -1221,8 +1221,24 @@ function renderDiffList(data) {
         function closeModal() { document.getElementById('editModal').style.display = 'none'; }
 
         function renderClientList(data) {
+          let dataResults = data.results;
+          let sortedData = dataResults;
+          if (dataResults[0]) {
+            if (dataResults[0].clientStakeSimulation) {
+                sortedData1 = dataResults.sort(function(a,b) {
+                    return b.clientStakeSimulation - a.clientStakeSimulation;
+                });
+                sortedData = sortedData1.sort(function(a,b) {
+                    return b.clientPendingStake - a.clientPendingStake;
+                });
+            } else {
+                sortedData = dataResults.sort(function(a,b) {
+                    return b.clientPendingStake - a.clientPendingStake;
+                });
+            }
+          }
             const tableBody = document.querySelector("#clientList tbody");
-            tableBody.innerHTML = data.results.map((id, index) => {
+            tableBody.innerHTML = dataResults.map((id, index) => {
                 const isClickable = parseFloat(id.clientPendingStake) !== 0;
                 const clickHandler = isClickable ? `onclick='openClientModal(${JSON.stringify(id.uniqueEvents2).replace(/'/g, "&apos;")}, "${id.id}")'` : "";
                 let clientPlSimulation = parseFloat(id.clientPlSimulation);
