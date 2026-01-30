@@ -465,6 +465,45 @@
     display: none;
 }
 
+/*
+Source - https://stackoverflow.com/a/49395765
+Posted by Makyen, modified by community. See post 'Timeline' for change history
+Retrieved 2026-01-30, License - CC BY-SA 4.0
+*/
+
+[data-title]:hover:after {
+    opacity: 1;
+    transition: all 0.1s ease 0.5s;
+    visibility: visible;
+}
+[data-title]:after {
+    content: attr(data-title);
+    position: absolute;
+    bottom: -1.6em;
+    left: 100%;
+    padding: 4px 4px 4px 8px;
+    color: #222;
+    white-space: nowrap; 
+    -moz-border-radius: 5px; 
+    -webkit-border-radius: 5px;  
+    border-radius: 5px;  
+    -moz-box-shadow: 0px 0px 4px #222;  
+    -webkit-box-shadow: 0px 0px 4px #222;  
+    box-shadow: 0px 0px 4px #222;  
+    background-image: -moz-linear-gradient(top, #f8f8f8, #cccccc);  
+    background-image: -webkit-gradient(linear,left top,left bottom,color-stop(0, #f8f8f8),color-stop(1, #cccccc));
+    background-image: -webkit-linear-gradient(top, #f8f8f8, #cccccc);  
+    background-image: -moz-linear-gradient(top, #f8f8f8, #cccccc);  
+    background-image: -ms-linear-gradient(top, #f8f8f8, #cccccc);  
+    background-image: -o-linear-gradient(top, #f8f8f8, #cccccc);
+    opacity: 0;
+    z-index: 99999;
+    visibility: hidden;
+}
+[data-title] {
+    position: relative;
+}
+
     </style>
 </head>
 
@@ -499,7 +538,8 @@
                                 <th>Stake</th>
                                 <th>PL</th>
                                 <th>Pending</th>
-                                <th>Simulation</th>
+                                <th>Stake Simulation</th>
+                                <th>PL Simulation</th>
                             </tr>
                         </thead>
                         <tbody></tbody>
@@ -1083,6 +1123,18 @@ function renderDiffList(data) {
                 let totalPlSimulation = 0;
                 let totalStakeSimulation = 0;
 
+                let totalPlSimulationOffice = 0;
+                let totalStakeSimulationOffice = 0;
+                let totalStakeOffice = 0;
+                let totalPendingOffice = 0;
+                let totalPlOffice = 0;
+
+                let totalPlSimulationConfirm = 0;
+                let totalStakeSimulationConfirm = 0;
+                let totalStakeConfirm = 0;
+                let totalPendingConfirm = 0;
+                let totalPlConfirm = 0;
+
                 if (idGroup.rows && Array.isArray(idGroup.rows)) {
                     idGroup.rows.forEach(row => {
                         if ((row.type === "" || row.type === "M") && (row.line === "" || row.type === "")) {
@@ -1091,22 +1143,40 @@ function renderDiffList(data) {
                             const s = parseFloat(row.stakeReal) || 0;
                             const p = parseFloat(row.plReal) || 0;
                             totalStake += s;
+                            totalStakeOffice += parseFloat(row.officeStake) || 0;
+                            totalStakeConfirm += parseFloat(row.confirmStake) || 0;
                             if (row.eval === "pen") {
                                 totalPending += s;
+                                totalPendingOffice += parseFloat(row.officeStake) || 0;
+                                totalPendingConfirm += parseFloat(row.confirmStake) || 0;
                             } else {
                                 totalPl += p;
+                                totalPlOffice+= parseFloat(row.officePl) || 0;
+                                totalPlConfirm += parseFloat(row.confirmPl) || 0;
                             }
 
                             // SIMULATION TOTALS 
                             // Use simulation stake if it exists, otherwise fall back to real stake
                             const sSim = parseFloat(row.stakeSimulation) || s; 
                             const pSim = parseFloat(row.plSimulation) || 0;
+                            console.log(row);
+                            const sSimOffice = parseFloat(row.stakeSimulationOffice); 
+                            const pSimOffice = parseFloat(row.plSimulationOffice) || 0;
+
+                            const sSimConfirm = parseFloat(row.stakeSimulationConfirm); 
+                            const pSimConfirm = parseFloat(row.plSimulationConfirm) || 0;
                             
                             
                             // Only add to PL if it's not pending
                             if (row.eval !== "pen") {
                                 totalPlSimulation += pSim;
                                 totalStakeSimulation += parseFloat(row.stakeSimulation);
+
+                                totalPlSimulationOffice += pSimOffice;
+                                totalStakeSimulationOffice += parseFloat(row.stakeSimulationOffice)|| 0;
+
+                                totalPlSimulationConfirm += pSimConfirm;
+                                totalStakeSimulationConfirm += parseFloat(row.stakeSimulationConfirm)|| 0;
                             }
                         }
                     });
@@ -1117,6 +1187,19 @@ function renderDiffList(data) {
                 idGroup.clientPl = totalPl.toFixed(2);
                 idGroup.clientPlSimulation = totalPlSimulation.toFixed(2);
                 idGroup.clientStakeSimulation = totalStakeSimulation.toFixed(2);
+
+                idGroup.clientStakeOffice = totalStakeOffice.toFixed(2);
+                idGroup.clientPendingStakeOffice = totalPendingOffice.toFixed(2);
+                idGroup.clientPlOffice = totalPlOffice.toFixed(2);
+                idGroup.clientPlSimulationOffice = totalPlSimulationOffice.toFixed(2);
+                idGroup.clientStakeSimulationOffice = totalStakeSimulationOffice.toFixed(2);
+
+                idGroup.clientStakeConfirm = totalStakeConfirm.toFixed(2);
+                idGroup.clientPendingStakeConfirm = totalPendingConfirm.toFixed(2);
+                idGroup.clientPlConfirm = totalPlConfirm.toFixed(2);
+                idGroup.clientPlSimulationConfirm = totalPlSimulationConfirm.toFixed(2);
+                idGroup.clientStakeSimulationConfirm = totalStakeSimulationConfirm.toFixed(2);
+
                 console.log(`Updated client ${idGroup.id}: Stake=${idGroup.clientStake}, Pending=${idGroup.clientPendingStake}, PL=${idGroup.clientPl}, SimPL=${idGroup.clientPlSimulation}, SimStake=${idGroup.clientStakeSimulation}`);
                 console.log(idGroup);
                 let pendingRows = idGroup.rows.filter(itm => itm.eval == "pen");
@@ -1124,12 +1207,24 @@ function renderDiffList(data) {
             
             });
 
-                        currentEventData.results.forEach(idGroup => {
+            currentEventData.results.forEach(idGroup => {
                 let totalStake = 0;
                 let totalPending = 0;
                 let totalPl = 0;
                 let totalPlSimulation = 0;
                 let totalStakeSimulation = 0;
+
+                let totalPlSimulationOffice = 0;
+                let totalStakeSimulationOffice = 0;
+                let totalStakeOffice = 0;
+                let totalPendingOffice = 0;
+                let totalPlOffice = 0;
+
+                let totalPlSimulationConfirm = 0;
+                let totalStakeSimulationConfirm = 0;
+                let totalStakeConfirm = 0;
+                let totalPendingConfirm = 0;
+                let totalPlConfirm = 0;
 
                 if (idGroup.rows && Array.isArray(idGroup.rows)) {
                     idGroup.rows.forEach(row => {
@@ -1139,22 +1234,40 @@ function renderDiffList(data) {
                             const s = parseFloat(row.stakeReal) || 0;
                             const p = parseFloat(row.plReal) || 0;
                             totalStake += s;
+                            totalStakeOffice += parseFloat(row.officeStake) || 0;
+                            totalStakeConfirm += parseFloat(row.confirmStake) || 0;
                             if (row.eval === "pen") {
                                 totalPending += s;
+                                totalPendingOffice += parseFloat(row.officeStake) || 0;
+                                totalPendingConfirm += parseFloat(row.confirmStake) || 0;
                             } else {
                                 totalPl += p;
+                                totalPlOffice+= parseFloat(row.officePl) || 0;
+                                totalPlConfirm += parseFloat(row.confirmPl) || 0;
                             }
 
                             // SIMULATION TOTALS 
                             // Use simulation stake if it exists, otherwise fall back to real stake
                             const sSim = parseFloat(row.stakeSimulation) || s; 
                             const pSim = parseFloat(row.plSimulation) || 0;
+                            console.log(row);
+                            const sSimOffice = parseFloat(row.stakeSimulationOffice); 
+                            const pSimOffice = parseFloat(row.plSimulationOffice) || 0;
+
+                            const sSimConfirm = parseFloat(row.stakeSimulationConfirm); 
+                            const pSimConfirm = parseFloat(row.plSimulationConfirm) || 0;
                             
                             
                             // Only add to PL if it's not pending
                             if (row.eval !== "pen") {
                                 totalPlSimulation += pSim;
                                 totalStakeSimulation += parseFloat(row.stakeSimulation);
+
+                                totalPlSimulationOffice += pSimOffice;
+                                totalStakeSimulationOffice += parseFloat(row.stakeSimulationOffice)|| 0;
+
+                                totalPlSimulationConfirm += pSimConfirm;
+                                totalStakeSimulationConfirm += parseFloat(row.stakeSimulationConfirm)|| 0;
                             }
                         }
                     });
@@ -1165,6 +1278,18 @@ function renderDiffList(data) {
                 idGroup.clientPl = totalPl.toFixed(2);
                 idGroup.clientPlSimulation = totalPlSimulation.toFixed(2);
                 idGroup.clientStakeSimulation = totalStakeSimulation.toFixed(2);
+
+                idGroup.clientStakeOffice = totalStakeOffice.toFixed(2);
+                idGroup.clientPendingStakeOffice = totalPendingOffice.toFixed(2);
+                idGroup.clientPlOffice = totalPlOffice.toFixed(2);
+                idGroup.clientPlSimulationOffice = totalPlSimulationOffice.toFixed(2);
+                idGroup.clientStakeSimulationOffice = totalStakeSimulationOffice.toFixed(2);
+
+                idGroup.clientStakeConfirm = totalStakeConfirm.toFixed(2);
+                idGroup.clientPendingStakeConfirm = totalPendingConfirm.toFixed(2);
+                idGroup.clientPlConfirm = totalPlConfirm.toFixed(2);
+                idGroup.clientPlSimulationConfirm = totalPlSimulationConfirm.toFixed(2);
+                idGroup.clientStakeSimulationConfirm = totalStakeSimulationConfirm.toFixed(2);
                 console.log(`Updated client ${idGroup.id}: Stake=${idGroup.clientStake}, Pending=${idGroup.clientPendingStake}, PL=${idGroup.clientPl}, SimPL=${idGroup.clientPlSimulation}, SimStake=${idGroup.clientStakeSimulation}`);
                 console.log(idGroup);
                 let pendingRows = idGroup.rows.filter(itm => itm.eval == "pen");
@@ -1188,22 +1313,34 @@ function renderDiffList(data) {
                 const stake = parseFloat(row.stakeReal);
                 const odd = parseFloat(row.odd);
                 row.stakeSimulation = stake;
+                row.stakeSimulationOffice = row.officeStake;
+                row.stakeSimulationConfirm = row.confirmStake;
                 if (row.eval === "L") {
-                    row.plReal = -1 * stake;
+                    // row.plReal = -1 * stake;
                     row.plSimulation =  -1 * stake;
+                    row.plSimulationOffice = -1 * parseFloat(row.officeStake);
+                    row.plSimulationConfirm = -1 * parseFloat(row.confirmStake);
                 } else if (row.eval === "W") {
-                    row.plReal = ((odd * stake) - stake).toFixed(2);
+                    // row.plReal = ((odd * stake) - stake).toFixed(2);
                     row.plSimulation = ((odd * stake) - stake).toFixed(2);
+                    row,plSimulationOffice = ((odd * parseFloat(row.officeStake)) - parseFloat(row.officeStake)).toFixed(2);
+                    row.plSimulationConfirm = ((odd * parseFloat(row.confirmStake)) - parseFloat(row.confirmStake)).toFixed(2);
                 } else if (row.eval === "W1/2") {
                     let newOdd = (odd - 1) / 2 + 1;
-                    row.plReal = ((newOdd * stake) - stake).toFixed(2);
+                    // row.plReal = ((newOdd * stake) - stake).toFixed(2);
                     row.plSimulation = ((newOdd * stake) - stake).toFixed(2);
+                    row.plSimulationOffice = ((newOdd * parseFloat(row.officeStake)) - parseFloat(row.officeStake)).toFixed(2);
+                    row.plSimulationConfirm = ((newOdd * parseFloat(row.confirmStake)) - parseFloat(row.confirmStake)).toFixed(2);
                 } else if (row.eval === "L1/2") {
-                    row.plReal = (stake / 2) * -1;
+                    // row.plReal = (stake / 2) * -1;
                     row.plSimulation = (stake / 2) * -1;
+                    row.plSimulationOffice = (parseFloat(row.officeStake) / 2) * -1;
+                    row.plSimulationConfirm = (parseFloat(row.confirmStake) / 2) * -1;
                 } else {
-                    row.plReal = 0;
+                    // row.plReal = 0;
                     row.plSimulation = 0;
+                    row.plSimulationOffice = 0;
+                    row.plSimulationConfirm = 0;
                 }
             }
 
@@ -1237,6 +1374,8 @@ function renderDiffList(data) {
                 });
             }
           }
+        //   console.log(sortedData);
+        //         console.log(test1);
             const tableBody = document.querySelector("#clientList tbody");
             tableBody.innerHTML = dataResults.map((id, index) => {
                 const isClickable = parseFloat(id.clientPendingStake) !== 0;
@@ -1248,15 +1387,27 @@ function renderDiffList(data) {
                 return `
             <tr ${clickHandler} style="${isClickable ? '' : 'cursor: default;'}">
                 <td>${id.id}</td>
-                <td>€${id.clientStake}</td>
-                <td>€${id.clientPl}</td>
+                <td>
+                    <small data-title="Partner Stake">€${id.clientStakeOffice}</small><br>
+                    <small data-title="Client Stake">€${id.clientStakeConfirm}</small>
+                </td>
+                <td>
+                    <small data-title="Partner PL">€${id.clientPlOffice}</small><br>
+                    <small data-title="Client PL">€${id.clientPlConfirm}</small>
+                </td>
                 <td style="${isClickable ? 'color: var(--accent-cyan); font-weight: bold;' : ''}">
-                    €${id.clientPendingStake}
+                    <small data-title="Partner Pending Stake">€${id.clientPendingStakeOffice}</small><br>
+                    <small data-title="Client Pending Stake">€${id.clientPendingStakeConfirm}</small>
+                </td>
+                <td>
+                    
+                    <small data-title="Partner Stake Simulation">€${id.clientStakeSimulationOffice ?? 0}</small><br>
+                    <small data-title="Client Stake Simulation">€${id.clientStakeSimulationConfirm ?? 0}</small>
                 </td>
                 <td style="color: ${isPositive ? 'var(--accent-cyan)' : 'var(--accent-pink)'}; font-weight: bold;">
-                    ${clientPlSimulation}
-                    <br>
-                    <small style="color: #ccc;">Stake: ${id.clientStakeSimulation ?? 0}</small>
+                    <small data-title="Partner PL Simulation">€${id.clientPlSimulationOffice ?? 0}</small><br>
+                    <small data-title="Client PL Simulation">€${id.clientPlSimulationConfirm ?? 0}</small>
+                    
                 </td>
             </tr>
         `;
