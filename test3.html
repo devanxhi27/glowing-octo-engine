@@ -1128,6 +1128,23 @@ async function applyEdit(shouldFinalize = true) {
         idGroup.clientStakeSimulationConfirm = t.conSimS.toFixed(2);
     });
 
+    // NEW: Refresh the Client Modal UI if it is currently open
+    const clientModal = document.getElementById('clientEventsModal');
+    if (clientModal && clientModal.style.display === 'flex') {
+        // Extract the clientId from the modal title (e.g., "Pending for: Client123")
+        const modalTitle = document.getElementById('clientModalTitle').innerText;
+        const clientId = modalTitle.split(': ')[1];
+        
+        if (clientId && currentEventData) {
+            // Find the data for this specific client again
+            const clientDataGroup = currentEventData.results.find(item => item.id === clientId);
+            if (clientDataGroup) {
+                // Re-run the list generator for the modal
+                openClientModal(clientDataGroup.uniqueEvents2, clientId);
+            }
+        }
+    }
+
     // Save state
     localStorage.setItem('eventsWithResults', JSON.stringify(eventsWithResults));
     localStorage.setItem('fullEventDataCache', JSON.stringify(currentEventData));
