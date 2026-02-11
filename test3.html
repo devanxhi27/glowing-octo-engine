@@ -704,6 +704,8 @@ Retrieved 2026-01-30, License - CC BY-SA 4.0
         renderDiffList(currentEventData);
         handleClearButtonVisibility();
         document.querySelector(".corner-text").innerText = "Last Update: " + currentEventData.lastUpdate;
+
+        setTimeout(performSimulationSafetyCheck, 500);
     } catch (err) { console.error(err); }
 }
 
@@ -1304,6 +1306,68 @@ function calculatePlReal(row) {
         };
 
         window.onload = initDashboard;
+
+        function performSimulationSafetyCheck() {
+    const tableRows = document.querySelectorAll("#clientList tbody tr");
+    const hasSavedResults = Object.keys(eventsWithResults).length > 0;
+    
+    if (!hasSavedResults) return; // Nothing to check if no simulations exist
+
+    let allZeros = true;
+
+    // Check if the simulation columns in the UI are actually showing data
+    tableRows.forEach(row => {
+        const simCells = row.querySelectorAll("td:nth-child(5), td:nth-child(6)");
+        simCells.forEach(cell => {
+            const val = cell.innerText.replace(/[^0-9.-]+/g, ""); // Strip € and +
+            if (parseFloat(val) !== 0) {
+                allZeros = false;
+            }
+        });
+    });
+
+    // If we have saved results but the UI shows all zeros, trigger a fix
+    if (hasSavedResults && allZeros) {
+        console.warn("Safety Check: Detected 0 values despite existing cache. Re-syncing...");
+        
+        // Use the logic from your initDashboard to re-apply results to currentEventData
+        if (currentEventData && currentEventData.results) {
+            currentEventData.results.forEach(idGroup => {
+                let t = { offSimPl: 0, offSimS: 0, conSimPl: 0, conSimS: 0 };
+                
+                idGroup.rows.forEach(row => {
+                    let eventStr = `${row.home} vs ${row.away}: ${row.line}`;
+                    if (eventsWithResults[eventStr]) {
+                        const saved = eventsWithResults[eventStr].result;
+                        let sf = (saved === "WIN") ? "W" : (saved === "LOSS") ? "L" : 
+                                 (saved === "1/2 WIN") ? "W1/2" : (saved === "1/2 LOSE") ? "L1/2" : 
+                                 (saved === "VOID") ? "V" : "pen";
+                        
+                        row.eval = sf;
+                        calculatePlReal(row);
+                        
+                        // Recalculate totals for this group
+                        if ((row.type === "" || row.type === "M" || !row.type) && (row.eval !== "pen")) {
+                            t.offSimPl += parseFloat(row.plSimulationOffice) || 0;
+                            t.offSimS += parseFloat(row.stakeSimulationOffice) || 0;
+                            t.conSimPl += parseFloat(row.plSimulationConfirm) || 0;
+                            t.conSimS += parseFloat(row.stakeSimulationConfirm) || 0;
+                        }
+                    }
+                });
+                
+                // Update the object properties
+                idGroup.clientPlSimulationOffice = t.offSimPl.toFixed(2);
+                idGroup.clientStakeSimulationOffice = t.offSimS.toFixed(2);
+                idGroup.clientPlSimulationConfirm = t.conSimPl.toFixed(2);
+                idGroup.clientStakeSimulationConfirm = t.conSimS.toFixed(2);
+            });
+            
+            // Re-render the list with the corrected data
+            renderClientList(currentEventData);
+        }
+    }
+}
     </script>
 </body>
 
