@@ -665,23 +665,43 @@ Retrieved 2026-01-30, License - CC BY-SA 4.0
             fetch(`${API_BASE}/pending-events`, FETCH_OPTIONS)
         ]);
         
-        const clientData = await cRes.json();
         const freshEventData = await eRes.json();
-
-        // CHECK CACHE: Load previously modified results if they exist
         const cachedData = JSON.parse(localStorage.getItem('fullEventDataCache'));
         
+        // 1. Determine base data
         if (cachedData && cachedData.lastUpdate === freshEventData.lastUpdate) {
-            // Use cached data because it contains your manual evaluations
             currentEventData = cachedData;
         } else {
-            // Use fresh data if no cache exists or if the server data has updated
             currentEventData = freshEventData;
         }
 
-        renderWeekList(currentEventData); // Use currentEventData
-        renderClientList(currentEventData); // Use currentEventData
-        renderDiffList(currentEventData); //Use currentEventData
+        // 2. SYNC: Force row evaluations to match your saved 'eventsWithResults'
+        if (currentEventData.results) {
+            currentEventData.results.forEach(idGroup => {
+                idGroup.rows.forEach(row => {
+                    let eventStr = `${row.home} vs ${row.away}: ${row.line}`;
+                    if (eventsWithResults[eventStr]) {
+                        // Map the saved result back to the shortForm used in the logic
+                        const saved = eventsWithResults[eventStr].result;
+                        let sf = "pen";
+                        if (saved === "WIN") sf = "W";
+                        else if (saved === "LOSS") sf = "L";
+                        else if (saved === "1/2 WIN") sf = "W1/2";
+                        else if (saved === "1/2 LOSE") sf = "L1/2";
+                        else if (saved === "VOID") sf = "V";
+                        
+                        // Apply it to the row so calculatePlReal can work
+                        row.eval = sf;
+                        calculatePlReal(row);
+                    }
+                });
+            });
+        }
+
+        // 3. Render
+        renderWeekList(currentEventData);
+        renderClientList(currentEventData);
+        renderDiffList(currentEventData);
         handleClearButtonVisibility();
         document.querySelector(".corner-text").innerText = "Last Update: " + currentEventData.lastUpdate;
     } catch (err) { console.error(err); }
@@ -1015,345 +1035,149 @@ function renderDiffList(data) {
             return null;
         }
 
-        async function applyEdit(shouldFinalize = true) {
-            updateEvaluation()
-            const h = document.getElementById('homeScore').value;
-            const a = document.getElementById('awayScore').value;
-            const resText = document.getElementById('evaluationResult').innerText;
+async function applyEdit(shouldFinalize = true) {
+    updateEvaluation();
+    const h = document.getElementById('homeScore').value;
+    const a = document.getElementById('awayScore').value;
+    const resText = document.getElementById('evaluationResult').innerText;
 
-            if (h === "" || a === "") return;
+    if (h === "" || a === "") return;
 
-            let shortFormResult = "pen";
-            if (resText === "WIN") {
-                shortFormResult = "W";
-            } else if (resText === "LOSS") {
-                shortFormResult = "L";
-            } else if (resText === "VOID") {
-                shortFormResult = "V";
-            } else if (resText === "1/2 WIN") {
-                shortFormResult = "W1/2";
-            } else if (resText === "1/2 LOSE") {
-                shortFormResult = "L1/2";
+    let shortFormResult = "pen";
+    if (resText === "WIN") shortFormResult = "W";
+    else if (resText === "LOSS") shortFormResult = "L";
+    else if (resText === "VOID") shortFormResult = "V";
+    else if (resText === "1/2 WIN") shortFormResult = "W1/2";
+    else if (resText === "1/2 LOSE") shortFormResult = "L1/2";
+
+    eventsWithResults[activeFullEvent] = { score: `${h}-${a}`, result: resText };
+
+    if (!currentEventData || !currentEventData.results) return;
+
+    // 1. Identify affected IDs and update row evaluations
+    let affectedIds = new Set();
+    currentEventData.results.forEach(idGroup => {
+        idGroup.rows.forEach(row => {
+            let eventStr = `${row.home} vs ${row.away}: ${row.line}`;
+            if (eventStr === activeFullEvent) {
+                row.eval = shortFormResult;
+                if (row.id) affectedIds.add(row.id);
+            }
+        });
+    });
+
+    // 2. Recalculate Main/Multiple rows and Client Totals
+    currentEventData.results.forEach(idGroup => {
+        let t = { offS:0, offP:0, offPl:0, offSimPl:0, offSimS:0, conS:0, conP:0, conPl:0, conSimPl:0, conSimS:0 };
+
+        idGroup.rows.forEach(row => {
+            // Update the Simulation values for the specific betting row
+            if (affectedIds.has(row.id)) {
+                if (row.type === "" || row.type === null || row.type === undefined) {
+                    row.eval = shortFormResult;
+                    calculatePlReal(row);
+                } else if (row.type === "M" && (!row.line || row.line === "")) {
+                    const siblings = idGroup.rows.filter(r => r.id === row.id && r.home !== "");
+                    const hasLoss = siblings.some(r => r.eval === "L" || r.eval === "L1/2");
+                    const allEval = siblings.every(r => r.eval && r.eval !== "pen");
+
+                    if (hasLoss) row.eval = "L";
+                    else if (allEval) row.eval = "W";
+                    else row.eval = "pen";
+                    
+                    calculatePlReal(row);
+                }
             }
 
-            eventsWithResults[activeFullEvent] = {
-                score: `${h}-${a}`,
-                result: resText
-            };
+            // SUMMATION LOGIC: Capture every row that contributes to totals
+            // Checking for empty type (Main) or "M" (Multiple)
+            if (row.type === "" || row.type === "M" || !row.type) {
+                const sOff = parseFloat(row.officeStake) || 0;
+                const sCon = parseFloat(row.confirmStake) || 0;
 
-            let matchingIds = [];
+                t.offS += sOff;
+                t.conS += sCon;
 
-            // Step 1: Identify which IDs are affected by this event
-            if (currentEventData && currentEventData.results) {
-                currentEventData.results.forEach(idGroup => {
-                    if (idGroup.rows && Array.isArray(idGroup.rows)) {
-                        idGroup.rows.forEach(row => {
-                            if (row.home && row.home !== "" && row.line && row.line !== "") {
-                                let eventStr = row.home + " vs " + row.away + ": " + row.line;
-                                if (eventStr === activeFullEvent) {
-                                    if (row.id && row.id !== "" && !matchingIds.includes(row.id)) {
-                                        row.eval = shortFormResult; // Immediate update for individual rows
-                                        matchingIds.push(row.id);
-                                    }
-                                }
-                            }
-                        });
-                    }
-                });
-            }
-
-            // Step 2: Update individual event rows first
-            // if (currentEventData && currentEventData.results) {
-            //     currentEventData.results.forEach(idGroup => {
-            //         if (idGroup.rows && Array.isArray(idGroup.rows)) {
-            //             idGroup.rows.forEach(row => {
-            //                 if (matchingIds.includes(row.id)) {
-            //                     if (row.home && row.home !== "" && row.line && row.line !== "") {
-            //                         let eventStr = row.home + " vs " + row.away + ": " + row.line;
-            //                         if (eventStr === activeFullEvent) {
-            //                             row.eval = shortFormResult;
-            //                         }
-            //                     }
-            //                 }
-            //             });
-            //         }
-            //     });
-            // }
-
-            // Step 3: Evaluate the Main Row (Type "" or Type "M")
-            if (currentEventData && currentEventData.results) {
-                currentEventData.results.forEach(idGroup => {
-                    if (idGroup.rows && Array.isArray(idGroup.rows)) {
-                        const currentRows = idGroup.rows;
-                        currentRows.forEach(row => {
-                            if (matchingIds.includes(row.id)) {
-                                if (row.type === "" && row.stakeReal && row.stakeReal !== "0") {
-                                    row.eval = shortFormResult;
-                                    calculatePlReal(row);
-                                } 
-                                else if (row.type === "M" && (row.line == "" || !row.line) && row.stakeReal && row.stakeReal !== "0" && row.eval == "pen") {
-                                    const siblingEvents = currentRows.filter(r => r.id === row.id && r.home != "" && r.line != "");
-                                    const allEvaluated = siblingEvents.every(r => r.eval && r.eval !== "pen");
-                                    const hasALoss = siblingEvents.some(r => r.eval === "L");
-
-                                    if (allEvaluated) {
-                                        row.eval = hasALoss ? "L" : "W";
-                                        calculatePlReal(row);
-                                    } else if (hasALoss) {
-                                        row.eval = "L";
-                                        calculatePlReal(row);
-                                    } else {
-                                        row.eval = "pen";
-                                        row.plReal = 0;
-                                    }
-                                }
-                            }
-                        });
-                    }
-                });
-            }
-
-            // NEW Step 4: Re-calculate Client-level Totals for the Cache
-           // NEW Step 4: Re-calculate Client-level Totals safely
-        if (currentEventData && currentEventData.results) {
-            currentEventData.results.forEach(idGroup => {
-                let totalStake = 0;
-                let totalPending = 0;
-                let totalPl = 0;
-                let totalPlSimulation = 0;
-                let totalStakeSimulation = 0;
-
-                let totalPlSimulationOffice = 0;
-                let totalStakeSimulationOffice = 0;
-                let totalStakeOffice = 0;
-                let totalPendingOffice = 0;
-                let totalPlOffice = 0;
-
-                let totalPlSimulationConfirm = 0;
-                let totalStakeSimulationConfirm = 0;
-                let totalStakeConfirm = 0;
-                let totalPendingConfirm = 0;
-                let totalPlConfirm = 0;
-
-                if (idGroup.rows && Array.isArray(idGroup.rows)) {
-                    idGroup.rows.forEach(row => {
-                        if ((row.type === "" || row.type === "M") && (row.line === "" || row.type === "")) {
-                            
-                            // REAL TOTALS
-                            const s = parseFloat(row.stakeReal) || 0;
-                            const p = parseFloat(row.plReal) || 0;
-                            totalStake += s;
-                            totalStakeOffice += parseFloat(row.officeStake) || 0;
-                            totalStakeConfirm += parseFloat(row.confirmStake) || 0;
-                            if (row.eval === "pen") {
-                                totalPending += s;
-                                totalPendingOffice += parseFloat(row.officeStake) || 0;
-                                totalPendingConfirm += parseFloat(row.confirmStake) || 0;
-                            } else {
-                                totalPl += p;
-                                totalPlOffice+= parseFloat(row.officePl) || 0;
-                                totalPlConfirm += parseFloat(row.confirmPl) || 0;
-                            }
-
-                            // SIMULATION TOTALS 
-                            // Use simulation stake if it exists, otherwise fall back to real stake
-                            const sSim = parseFloat(row.stakeSimulation) || s; 
-                            const pSim = parseFloat(row.plSimulation) || 0;
-                            console.log(row);
-                            const sSimOffice = parseFloat(row.stakeSimulationOffice); 
-                            const pSimOffice = parseFloat(row.plSimulationOffice) || 0;
-
-                            const sSimConfirm = parseFloat(row.stakeSimulationConfirm); 
-                            const pSimConfirm = parseFloat(row.plSimulationConfirm) || 0;
-                            
-                            
-                            // Only add to PL if it's not pending
-                            if (row.eval !== "pen") {
-                                totalPlSimulation += pSim;
-                                totalStakeSimulation += parseFloat(row.stakeSimulation);
-
-                                totalPlSimulationOffice += pSimOffice;
-                                totalStakeSimulationOffice += parseFloat(row.stakeSimulationOffice)|| 0;
-
-                                totalPlSimulationConfirm += pSimConfirm;
-                                totalStakeSimulationConfirm += parseFloat(row.stakeSimulationConfirm)|| 0;
-                            }
-                        }
-                    });
-                }
-
-                idGroup.clientStake = totalStake.toFixed(2);
-                idGroup.clientPendingStake = totalPending.toFixed(2);
-                idGroup.clientPl = totalPl.toFixed(2);
-                idGroup.clientPlSimulation = totalPlSimulation.toFixed(2);
-                idGroup.clientStakeSimulation = totalStakeSimulation.toFixed(2);
-
-                idGroup.clientStakeOffice = totalStakeOffice.toFixed(2);
-                idGroup.clientPendingStakeOffice = totalPendingOffice.toFixed(2);
-                idGroup.clientPlOffice = totalPlOffice.toFixed(2);
-                idGroup.clientPlSimulationOffice = totalPlSimulationOffice.toFixed(2);
-                idGroup.clientStakeSimulationOffice = totalStakeSimulationOffice.toFixed(2);
-
-                idGroup.clientStakeConfirm = totalStakeConfirm.toFixed(2);
-                idGroup.clientPendingStakeConfirm = totalPendingConfirm.toFixed(2);
-                idGroup.clientPlConfirm = totalPlConfirm.toFixed(2);
-                idGroup.clientPlSimulationConfirm = totalPlSimulationConfirm.toFixed(2);
-                idGroup.clientStakeSimulationConfirm = totalStakeSimulationConfirm.toFixed(2);
-
-                console.log(`Updated client ${idGroup.id}: Stake=${idGroup.clientStake}, Pending=${idGroup.clientPendingStake}, PL=${idGroup.clientPl}, SimPL=${idGroup.clientPlSimulation}, SimStake=${idGroup.clientStakeSimulation}`);
-                console.log(idGroup);
-                let pendingRows = idGroup.rows.filter(itm => itm.eval == "pen");
-                console.log({pendingRows: pendingRows});
-            
-            });
-
-            currentEventData.results.forEach(idGroup => {
-                let totalStake = 0;
-                let totalPending = 0;
-                let totalPl = 0;
-                let totalPlSimulation = 0;
-                let totalStakeSimulation = 0;
-
-                let totalPlSimulationOffice = 0;
-                let totalStakeSimulationOffice = 0;
-                let totalStakeOffice = 0;
-                let totalPendingOffice = 0;
-                let totalPlOffice = 0;
-
-                let totalPlSimulationConfirm = 0;
-                let totalStakeSimulationConfirm = 0;
-                let totalStakeConfirm = 0;
-                let totalPendingConfirm = 0;
-                let totalPlConfirm = 0;
-
-                if (idGroup.rows && Array.isArray(idGroup.rows)) {
-                    idGroup.rows.forEach(row => {
-                        if ((row.type === "" || row.type === "M") && (row.line === "" || row.type === "")) {
-                            
-                            // REAL TOTALS
-                            const s = parseFloat(row.stakeReal) || 0;
-                            const p = parseFloat(row.plReal) || 0;
-                            totalStake += s;
-                            totalStakeOffice += parseFloat(row.officeStake) || 0;
-                            totalStakeConfirm += parseFloat(row.confirmStake) || 0;
-                            if (row.eval === "pen") {
-                                totalPending += s;
-                                totalPendingOffice += parseFloat(row.officeStake) || 0;
-                                totalPendingConfirm += parseFloat(row.confirmStake) || 0;
-                            } else {
-                                totalPl += p;
-                                totalPlOffice+= parseFloat(row.officePl) || 0;
-                                totalPlConfirm += parseFloat(row.confirmPl) || 0;
-                            }
-
-                            // SIMULATION TOTALS 
-                            // Use simulation stake if it exists, otherwise fall back to real stake
-                            const sSim = parseFloat(row.stakeSimulation) || s; 
-                            const pSim = parseFloat(row.plSimulation) || 0;
-                            console.log(row);
-                            const sSimOffice = parseFloat(row.stakeSimulationOffice); 
-                            const pSimOffice = parseFloat(row.plSimulationOffice) || 0;
-
-                            const sSimConfirm = parseFloat(row.stakeSimulationConfirm); 
-                            const pSimConfirm = parseFloat(row.plSimulationConfirm) || 0;
-                            
-                            
-                            // Only add to PL if it's not pending
-                            if (row.eval !== "pen") {
-                                totalPlSimulation += pSim;
-                                totalStakeSimulation += parseFloat(row.stakeSimulation);
-
-                                totalPlSimulationOffice += pSimOffice;
-                                totalStakeSimulationOffice += parseFloat(row.stakeSimulationOffice)|| 0;
-
-                                totalPlSimulationConfirm += pSimConfirm;
-                                totalStakeSimulationConfirm += parseFloat(row.stakeSimulationConfirm)|| 0;
-                            }
-                        }
-                    });
-                }
-
-                idGroup.clientStake = totalStake.toFixed(2);
-                idGroup.clientPendingStake = totalPending.toFixed(2);
-                idGroup.clientPl = totalPl.toFixed(2);
-                idGroup.clientPlSimulation = totalPlSimulation.toFixed(2);
-                idGroup.clientStakeSimulation = totalStakeSimulation.toFixed(2);
-
-                idGroup.clientStakeOffice = totalStakeOffice.toFixed(2);
-                idGroup.clientPendingStakeOffice = totalPendingOffice.toFixed(2);
-                idGroup.clientPlOffice = totalPlOffice.toFixed(2);
-                idGroup.clientPlSimulationOffice = totalPlSimulationOffice.toFixed(2);
-                idGroup.clientStakeSimulationOffice = totalStakeSimulationOffice.toFixed(2);
-
-                idGroup.clientStakeConfirm = totalStakeConfirm.toFixed(2);
-                idGroup.clientPendingStakeConfirm = totalPendingConfirm.toFixed(2);
-                idGroup.clientPlConfirm = totalPlConfirm.toFixed(2);
-                idGroup.clientPlSimulationConfirm = totalPlSimulationConfirm.toFixed(2);
-                idGroup.clientStakeSimulationConfirm = totalStakeSimulationConfirm.toFixed(2);
-                console.log(`Updated client ${idGroup.id}: Stake=${idGroup.clientStake}, Pending=${idGroup.clientPendingStake}, PL=${idGroup.clientPl}, SimPL=${idGroup.clientPlSimulation}, SimStake=${idGroup.clientStakeSimulation}`);
-                console.log(idGroup);
-                let pendingRows = idGroup.rows.filter(itm => itm.eval == "pen");
-                console.log({pendingRows: pendingRows});
-            
-            });
-
-            
-                let clientModal = document.querySelector("#clientEventsModal");
-                let clientModalDisplay = clientModal.style.display; 
-                console.log({clientModalDisplay: clientModalDisplay});
-                if (clientModalDisplay == "flex") {
-                    let clientId = document.querySelector("#clientModalTitle").textContent.split("Pending for: ")[1];
-                    let clientEvnts = currentEventData.results.find(item => item.id == clientId);
-                    await openClientModal(JSON.stringify(clientEvnts.uniqueEvents2).replace(/'/g, "&apos;"), clientId);
-                }
-        }
-
-            // Helper to keep code clean
-        function calculatePlReal(row) {
-                const stake = parseFloat(row.stakeReal);
-                const odd = parseFloat(row.odd);
-                row.stakeSimulation = stake;
-                row.stakeSimulationOffice = row.officeStake;
-                row.stakeSimulationConfirm = row.confirmStake;
-                if (row.eval === "L") {
-                    // row.plReal = -1 * stake;
-                    row.plSimulation =  -1 * stake;
-                    row.plSimulationOffice = -1 * parseFloat(row.officeStake);
-                    row.plSimulationConfirm = -1 * parseFloat(row.confirmStake);
-                } else if (row.eval === "W") {
-                    // row.plReal = ((odd * stake) - stake).toFixed(2);
-                    row.plSimulation = ((odd * stake) - stake).toFixed(2);
-                    row,plSimulationOffice = ((odd * parseFloat(row.officeStake)) - parseFloat(row.officeStake)).toFixed(2);
-                    row.plSimulationConfirm = ((odd * parseFloat(row.confirmStake)) - parseFloat(row.confirmStake)).toFixed(2);
-                } else if (row.eval === "W1/2") {
-                    let newOdd = (odd - 1) / 2 + 1;
-                    // row.plReal = ((newOdd * stake) - stake).toFixed(2);
-                    row.plSimulation = ((newOdd * stake) - stake).toFixed(2);
-                    row.plSimulationOffice = ((newOdd * parseFloat(row.officeStake)) - parseFloat(row.officeStake)).toFixed(2);
-                    row.plSimulationConfirm = ((newOdd * parseFloat(row.confirmStake)) - parseFloat(row.confirmStake)).toFixed(2);
-                } else if (row.eval === "L1/2") {
-                    // row.plReal = (stake / 2) * -1;
-                    row.plSimulation = (stake / 2) * -1;
-                    row.plSimulationOffice = (parseFloat(row.officeStake) / 2) * -1;
-                    row.plSimulationConfirm = (parseFloat(row.confirmStake) / 2) * -1;
+                if (row.eval === "pen") {
+                    t.offP += sOff;
+                    t.conP += sCon;
                 } else {
-                    // row.plReal = 0;
-                    row.plSimulation = 0;
-                    row.plSimulationOffice = 0;
-                    row.plSimulationConfirm = 0;
+                    t.offPl += parseFloat(row.officePl) || 0;
+                    t.conPl += parseFloat(row.confirmPl) || 0;
+                    t.offSimPl += parseFloat(row.plSimulationOffice) || 0;
+                    t.offSimS += parseFloat(row.stakeSimulationOffice) || 0;
+                    t.conSimPl += parseFloat(row.plSimulationConfirm) || 0;
+                    t.conSimS += parseFloat(row.stakeSimulationConfirm) || 0;
                 }
             }
+        });
 
-            // Finalize Caching
-            localStorage.setItem('eventsWithResults', JSON.stringify(eventsWithResults));
-            localStorage.setItem('fullEventDataCache', JSON.stringify(currentEventData));
+        // Write totals back to the group for the UI to read
+        idGroup.clientStakeOffice = t.offS.toFixed(2);
+        idGroup.clientPendingStakeOffice = t.offP.toFixed(2);
+        idGroup.clientPlOffice = t.offPl.toFixed(2);
+        idGroup.clientPlSimulationOffice = t.offSimPl.toFixed(2);
+        idGroup.clientStakeSimulationOffice = t.offSimS.toFixed(2);
 
-            // Only close and refresh if we are done with the batch
-            if (shouldFinalize) {
-                closeModal();
-                initDashboard();
-            }
-        }
+        idGroup.clientStakeConfirm = t.conS.toFixed(2);
+        idGroup.clientPendingStakeConfirm = t.conP.toFixed(2);
+        idGroup.clientPlConfirm = t.conPl.toFixed(2);
+        idGroup.clientPlSimulationConfirm = t.conSimPl.toFixed(2);
+        idGroup.clientStakeSimulationConfirm = t.conSimS.toFixed(2);
+    });
+
+    // Save state
+    localStorage.setItem('eventsWithResults', JSON.stringify(eventsWithResults));
+    localStorage.setItem('fullEventDataCache', JSON.stringify(currentEventData));
+
+    if (shouldFinalize) {
+        closeModal();
+        renderWeekList(currentEventData);
+        renderClientList(currentEventData);
+    }
+}
+
+
+        // Helper to keep code clean
+function calculatePlReal(row) {
+    const stake = parseFloat(row.stakeReal) || 0;
+    const odd = parseFloat(row.odd) || 0;
+    const officeStake = parseFloat(row.officeStake) || 0;
+    const confirmStake = parseFloat(row.confirmStake) || 0;
+
+    row.stakeSimulation = stake;
+    row.stakeSimulationOffice = officeStake;
+    row.stakeSimulationConfirm = confirmStake;
+
+    if (row.eval === "W") {
+        row.plSimulation = (odd * stake) - stake;
+        row.plSimulationOffice = (odd * officeStake) - officeStake;
+        row.plSimulationConfirm = (odd * confirmStake) - confirmStake;
+    } else if (row.eval === "L") {
+        row.plSimulation = -1 * stake;
+        row.plSimulationOffice = -1 * officeStake;
+        row.plSimulationConfirm = -1 * confirmStake;
+    } else if (row.eval === "W1/2") {
+        let newOdd = (odd - 1) / 2 + 1;
+        row.plSimulation = (newOdd * stake) - stake;
+        row.plSimulationOffice = (newOdd * officeStake) - officeStake;
+        row.plSimulationConfirm = (newOdd * confirmStake) - confirmStake;
+    } else if (row.eval === "L1/2") {
+        row.plSimulation = (stake / 2) * -1;
+        row.plSimulationOffice = (officeStake / 2) * -1;
+        row.plSimulationConfirm = (confirmStake / 2) * -1;
+    } else {
+        row.plSimulation = 0;
+        row.plSimulationOffice = 0;
+        row.plSimulationConfirm = 0;
+    }
+
+    // Force values to be numbers to prevent string concatenation errors
+    row.plSimulation = parseFloat(row.plSimulation) || 0;
+    row.plSimulationOffice = parseFloat(row.plSimulationOffice) || 0;
+    row.plSimulationConfirm = parseFloat(row.plSimulationConfirm) || 0;
+}
+
 
         function closeModal() { document.getElementById('editModal').style.display = 'none'; }
 
@@ -1382,8 +1206,16 @@ function renderDiffList(data) {
                 const clickHandler = isClickable ? `onclick='openClientModal(${JSON.stringify(id.uniqueEvents2).replace(/'/g, "&apos;")}, "${id.id}")'` : "";
                 let clientPlSimulation = parseFloat(id.clientPlSimulation);
                 if (isNaN(clientPlSimulation)) clientPlSimulation = 0;
-                let isPositive = clientPlSimulation > 0;
+                let isPositive = parseFloat(clientPlSimulation) > 0;
                 clientPlSimulation = (isPositive ? "+" : "") + "€" + clientPlSimulation.toFixed(2); 
+
+                const simOff = parseFloat(id.clientPlSimulationOffice) || 0;
+                const simCon = parseFloat(id.clientPlSimulationConfirm) || 0;
+
+                // Class selection logic
+                const offClass = simOff > 0 || simCon > 0 ? 'style="color: var(--accent-cyan); font-weight: bold;"' : 'style="color: var(--accent-pink); font-weight: bold;"'; // Use your specific CSS class names
+                const conClass = simOff > 0 || simCon > 0 ? 'style="color: var(--accent-cyan); font-weight: bold;"' : 'style="color: var(--accent-pink); font-weight: bold;"';
+
                 return `
             <tr ${clickHandler} style="${isClickable ? '' : 'cursor: default;'}">
                 <td>${id.id}</td>
@@ -1404,7 +1236,7 @@ function renderDiffList(data) {
                     <small data-title="Partner Stake Simulation">€${id.clientStakeSimulationOffice ?? 0}</small><br>
                     <small data-title="Client Stake Simulation">€${id.clientStakeSimulationConfirm ?? 0}</small>
                 </td>
-                <td style="color: ${isPositive ? 'var(--accent-cyan)' : 'var(--accent-pink)'}; font-weight: bold;">
+                <td ${offClass}>
                     <small data-title="Partner PL Simulation">€${id.clientPlSimulationOffice ?? 0}</small><br>
                     <small data-title="Client PL Simulation">€${id.clientPlSimulationConfirm ?? 0}</small>
                     
