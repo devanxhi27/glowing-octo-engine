@@ -1153,6 +1153,7 @@ async function applyEdit(shouldFinalize = true) {
         closeModal();
         renderWeekList(currentEventData);
         renderClientList(currentEventData);
+        handleClearButtonVisibility();
     }
 }
 
