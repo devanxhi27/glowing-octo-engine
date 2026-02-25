@@ -5,6 +5,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Clients Dashboard - Unified</title>
+    <link rel="icon" type="image/x-icon" href="public\images\chart.png">
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <style>
@@ -1009,10 +1010,11 @@ function renderDiffList(data) {
             if (l === "away") return a > h;
             if (l === "draw") return a == h;
 
-            if (l.includes('over_') || l.includes('under_')) {
+            if (l.includes('over') || l.includes('under')) {
                 console.log("Evaluating over/under for", currentMarketType);
                 const isOver = l.includes('over');
-                const v = parseFloat(parts.find(p => !isNaN(parseFloat(p))));
+                // const v = parseFloat(parts.find(p => !isNaN(parseFloat(p))));
+                const v = extractNumbers(l)[0];
                 const total = h + a;
 
                 if (l.includes('home')) return isOver ? h > v : h < v;
@@ -1391,6 +1393,11 @@ function calculatePlReal(row) {
             renderClientList(currentEventData);
         }
     }
+}
+
+function extractNumbers(str) {
+  const matches = str.match(/-?\d+(\.\d+)?/g);
+  return matches ? matches.map(Number) : [];
 }
     </script>
 </body>
