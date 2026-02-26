@@ -1230,7 +1230,7 @@ function calculatePlReal(row) {
         //         console.log(test1);
             const tableBody = document.querySelector("#clientList tbody");
             tableBody.innerHTML = dataResults.map((id, index) => {
-                const isClickable = parseFloat(id.clientPendingStake) !== 0;
+                const isClickable = parseFloat(id.clientPendingStakeOffice) !== 0 && parseFloat(id.clientPendingStakeConfirm) !== 0;
                 const clickHandler = isClickable ? `onclick='openClientModal(${JSON.stringify(id.uniqueEvents2).replace(/'/g, "&apos;")}, "${id.id}")'` : "";
                 let clientPlSimulation = parseFloat(id.clientPlSimulation);
                 if (isNaN(clientPlSimulation)) clientPlSimulation = 0;
